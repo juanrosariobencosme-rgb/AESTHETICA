@@ -1,30 +1,33 @@
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@300;400;500;600&display=swap');
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme {
-  --font-serif: "Playfair Display", Georgia, serif;
-  --font-sans: "Manrope", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
+@layer base {
+  :root {
+    --font-serif: "Playfair Display", Georgia, serif;
+    --font-sans: "Manrope", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", monospace;
 
-  --color-primary: #725a37;
-  --color-primary-container: #b89b72;
-  --color-on-primary-container: #473313;
-  --color-background: #fcf9f4;
-  --color-on-background: #1c1c19;
-  --color-surface: #fcf9f4;
-  --color-on-surface: #1c1c19;
-  --color-surface-variant: #e5e2dd;
-  --color-on-surface-variant: #4d463c;
-  --color-surface-container: #f0ede9;
-  --color-surface-container-low: #f6f3ee;
-  --color-surface-container-high: #ebe8e3;
-  --color-surface-container-highest: #e5e2dd;
-  --color-outline: #7f766a;
-  --color-outline-variant: #d1c5b7;
-  --color-secondary: #4f644e;
-  --color-secondary-container: #d2e9cd;
-  --color-on-secondary-container: #556a54;
-  --color-secondary-fixed: #d2e9cd;
-  --color-secondary-fixed-dim: #b6cdb2;
+    --color-primary: #725a37;
+    --color-primary-container: #b89b72;
+    --color-on-primary-container: #473313;
+    --color-background: #fcf9f4;
+    --color-on-background: #1c1c19;
+    --color-surface: #fcf9f4;
+    --color-on-surface: #1c1c19;
+    --color-surface-variant: #e5e2dd;
+    --color-on-surface-variant: #4d463c;
+    --color-surface-container: #f0ede9;
+    --color-surface-container-low: #f6f3ee;
+    --color-surface-container-high: #ebe8e3;
+    --color-surface-container-highest: #e5e2dd;
+    --color-outline: #7f766a;
+    --color-outline-variant: #d1c5b7;
+    --color-secondary: #4f644e;
+    --color-secondary-container: #d2e9cd;
+    --color-on-secondary-container: #556a54;
+    --color-secondary-fixed: #d2e9cd;
+    --color-secondary-fixed-dim: #b6cdb2;
+  }
 }
-
