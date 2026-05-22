@@ -37,6 +37,7 @@ export default function Header({
   const handleNavClick = (tabId: string) => {
     setActiveTab(tabId);
     setIsOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (

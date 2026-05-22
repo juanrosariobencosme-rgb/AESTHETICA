@@ -106,23 +106,23 @@ export default function OrderSuccessView({
 
   return (
     <div className="bg-background min-h-screen text-on-background">
-      <div className="max-w-7xl mx-auto px-4 md:px-16 py-12 md:py-24 flex flex-col items-center">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-16 py-8 sm:py-12 md:py-16 lg:py-24 flex flex-col items-center">
         
         {/* Success Header */}
-        <div className="text-center max-w-2xl mx-auto mb-16">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-[#d2e9cd]/30 text-[#4f644e] mb-6">
-            <Check className="w-10 h-10 stroke-[2.5]" />
+        <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-12 lg:mb-16">
+          <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#d2e9cd]/30 text-[#4f644e] mb-4 sm:mb-6">
+            <Check className="w-8 h-8 sm:w-10 sm:h-10 stroke-[2.5]" />
           </div>
-          <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl text-primary mb-4 font-normal tracking-wide leading-tight">
+          <h1 className="font-serif text-2xl sm:text-4xl md:text-5xl lg:text-6xl text-primary mb-3 sm:mb-4 font-normal tracking-wide leading-tight">
             Orden Generada con Éxito
           </h1>
-          <p className="text-base sm:text-lg text-on-surface-variant leading-relaxed">
+          <p className="text-sm sm:text-base md:text-lg text-on-surface-variant leading-relaxed">
             Gracias por tu preferencia. Tu número de orden es <strong className="text-primary tracking-wider font-semibold">#{orderNumber}</strong>.
           </p>
         </div>
 
         {/* Bento Grid Layout */}
-        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
           
           {/* Left Column: Supermarket Receipt Invoice Format */}
           <div className="lg:col-span-5 flex flex-col gap-6 w-full">

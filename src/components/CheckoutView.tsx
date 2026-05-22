@@ -46,35 +46,35 @@ export default function CheckoutView({
 
   return (
     <div className="bg-background min-h-screen text-on-background">
-      <div className="max-w-7xl mx-auto px-4 md:px-16 py-12 md:py-24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-16 py-8 sm:py-12 md:py-16 lg:py-24">
         
         {cart.length === 0 ? (
-          <div className="text-center py-24 bg-white border border-outline-variant/30 p-8 max-w-md mx-auto space-y-4">
-            <ShoppingBag className="w-12 h-12 text-primary mx-auto animate-pulse" />
-            <h2 className="font-serif text-xl text-on-surface">Tu bolso está vacío</h2>
-            <p className="text-xs text-on-surface-variant leading-relaxed">
+          <div className="text-center py-16 sm:py-24 bg-white border border-outline-variant/30 p-6 sm:p-8 max-w-md mx-auto space-y-4">
+            <ShoppingBag className="w-10 h-10 sm:w-12 sm:h-12 text-primary mx-auto animate-pulse" />
+            <h2 className="font-serif text-lg sm:text-xl text-on-surface">Tu bolso está vacío</h2>
+            <p className="text-xs sm:text-sm text-on-surface-variant leading-relaxed">
               Agregue elixires faciales de nuestra colección selecta para iniciar el ritual de compra.
             </p>
             <button
               onClick={onBackToCatalog}
-              className="py-3 px-8 bg-on-surface text-white text-[10px] uppercase tracking-widest font-bold hover:bg-primary transition-colors cursor-pointer"
+              className="py-3 px-6 sm:px-8 bg-on-surface text-white text-[10px] uppercase tracking-widest font-bold hover:bg-primary transition-colors cursor-pointer"
             >
               Ver Colecciones
             </button>
           </div>
         ) : (
-          <form onSubmit={handlePlaceOrder} className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-start">
+          <form onSubmit={handlePlaceOrder} className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-16 items-start">
             
             {/* Left Column: Forms */}
-            <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-16 text-left">
+            <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-8 sm:gap-12 lg:gap-16 text-left">
               
               {/* Personal Information */}
               <section>
-                <header className="mb-10">
-                  <h2 className="font-serif text-2xl text-on-surface mb-2 font-light">Información Personal</h2>
+                <header className="mb-6 sm:mb-10">
+                  <h2 className="font-serif text-xl sm:text-2xl text-on-surface mb-2 font-light">Información Personal</h2>
                   <p className="text-xs text-on-surface-variant">Detalles para contactarte sobre tu orden.</p>
                 </header>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-10">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 sm:gap-x-8 gap-y-8 sm:gap-y-10">
                   <div className="flex flex-col">
                     <label className="text-[10px] uppercase tracking-[0.15em] font-semibold text-outline mb-2" htmlFor="fullName">
                       Nombre Completo

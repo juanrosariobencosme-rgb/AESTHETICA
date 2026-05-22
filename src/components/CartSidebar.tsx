@@ -48,7 +48,7 @@ export default function CartSidebar({
           animate={{ x: 0 }}
           exit={{ x: '100%' }}
           transition={{ type: 'spring', stiffness: 350, damping: 40 }}
-          className="w-screen max-w-md pointer-events-auto"
+          className="w-screen max-w-md sm:max-w-lg pointer-events-auto"
         >
           <div className="h-full flex flex-col bg-[#FAF8F5] shadow-2xl border-l border-[#EADCC9]/50 overflow-y-hidden">
             
