@@ -25,33 +25,65 @@ export default function HomeView({
   // Highlight three products on home screen
   const featuredProducts = products.slice(0, 3);
 
-  // Carousel Items definition
-  const CAROUSEL_ITEMS = [
-    {
-      product: products[0] || PRODUCTS[0], // Lumière Dorée
-      quote: "Tratamiento concentrado con péptidos y partículas finas de oro 24K para un brillo de seda.",
-      badge: "Elixir Destacado",
-      image: (products[0] || PRODUCTS[0]).image
-    },
-    {
-      product: products[1] || PRODUCTS[1], // Aura Essentials
-      quote: "Bálsamo cremoso a base de absoluto de jazmín que purifica y fortalece la barrera cutánea.",
-      badge: "Pureza Sensorial",
-      image: (products[1] || PRODUCTS[1]).image
-    },
-    {
-      product: products[2] || PRODUCTS[2], // Hydro-Plump Nectar
-      quote: "Néctar hidratante con ácido hialurónico molecular y agua pura de glaciar suizo.",
-      badge: "Bote de Humedad",
-      image: (products[2] || PRODUCTS[2]).image
-    },
-    {
-      product: products[3] || PRODUCTS[3], // Aurum Velvet
-      quote: "Crema exquisita con escualano vegetal y hojuelas de oro para esculpir profundamente.",
-      badge: "Lifting Esculpido",
-      image: (products[3] || PRODUCTS[3]).image
-    }
-  ];
+  // Carousel Items definition - only use products from actual inventory
+  const CAROUSEL_ITEMS = products.slice(0, 4).map((product, index) => ({
+    product: product,
+    quote: getProductQuote(product.name),
+    badge: getProductBadge(product.name),
+    image: product.image
+  }));
+
+  const getProductQuote = (productName: string): string => {
+    const quotes: Record<string, string> = {
+      'Lumière Dorée': 'Tratamiento concentrado con péptidos y partículas finas de oro 24K para un brillo de seda.',
+      'Aura Essentials': 'Bálsamo cremoso a base de absoluto de jazmín que purifica y fortalece la barrera cutánea.',
+      'Hydro-Plump Nectar': 'Néctar hidratante con ácido hialurónico molecular y agua pura de glaciar suizo.',
+      'Aurum Velvet': 'Crema exquisita con escualano vegetal y hojuelas de oro para esculpir profundamente.',
+      'Nectar de Soleil': 'Infusión sensorial de 8 aceites botánicos orgánicos para regeneración última.',
+      'Sublime Elixir Iris': 'Néctar botánico precioso rico en flavonoides activos de la raíz Iris Pallida.',
+      'Caviar Luxe Infusion': 'Complejo marino extraordinario que fusiona ADN de caviar con extractos botánicos.',
+      'Botanique Mist Bioactive': 'Mist celular bioactivo ligero que refresca, purifica y optimiza la absorción.',
+      'Crystal Dew Serum': 'Serum iluminador revolucionario infundido con polvo de diamante micronizado.',
+      'Midnight Repair': 'Aceite nocturno intensivo formulado con bakuchiol y aceite de rosa mosqueta.',
+      'Arctic Algae Mask': 'Máscara desintoxicante poderosa que combina extractos de algas árticas con arcilla volcánica.',
+      'Peptide Lift Cream': 'Crema anti-envejecimiento potente con complejo de péptidos propietario.',
+      'Rose Quartz Roller': 'Rodillo facial de cuarzo rosa genuino diseñado para mejorar la absorción de productos.',
+      'Vitamin C Glow Serum': 'Serum potente de vitamina C 20% estabilizado con ácido ferúlico y vitamina E.',
+      'Hyaluronic Acid Mist': 'Mist refrescante que proporciona hidratación instantánea y efecto voluminizador.',
+      'Retinol Night Cream': 'Crema nocturna suave con retinol encapsulado que se libera gradualmente.',
+      'Green Tea Cleanser': 'Limpiador en gel refrescante infundido con extracto de té verde y antioxidantes.',
+      'Collagen Eye Cream': 'Tratamiento ocular dirigido con colágeno marino y péptidos.',
+      'Daily Defense SPF 50': 'Protector solar ligero y no graso con protección de amplio espectro SPF 50.',
+      'Radiance Exfoliating Scrub': 'Exfoliante físico suave con perlas de jojoba y enzimas de frutas.'
+    };
+    return quotes[productName] || 'Tratamiento exclusivo formulado con ingredientes premium.';
+  };
+
+  const getProductBadge = (productName: string): string => {
+    const badges: Record<string, string> = {
+      'Lumière Dorée': 'Elixir Destacado',
+      'Aura Essentials': 'Pureza Sensorial',
+      'Hydro-Plump Nectar': 'Bote de Humedad',
+      'Aurum Velvet': 'Lifting Esculpido',
+      'Nectar de Soleil': 'Regeneración Nocturna',
+      'Sublime Elixir Iris': 'Plumping Intenso',
+      'Caviar Luxe Infusion': 'Reconstrucción Celular',
+      'Botanique Mist Bioactive': 'Refrescante Bioactivo',
+      'Crystal Dew Serum': 'Iluminación Diamante',
+      'Midnight Repair': 'Renovación Nocturna',
+      'Arctic Algae Mask': 'Desintoxicación Profunda',
+      'Peptide Lift Cream': 'Anti-Edad Avanzado',
+      'Rose Quartz Roller': 'Masaje Cristalino',
+      'Vitamin C Glow Serum': 'Antioxidante Potente',
+      'Hyaluronic Acid Mist': 'Hidratación Instantánea',
+      'Retinol Night Cream': 'Tratamiento Suave',
+      'Green Tea Cleanser': 'Limpieza Antioxidante',
+      'Collagen Eye Cream': 'Tratamiento Ocular',
+      'Daily Defense SPF 50': 'Protección Solar',
+      'Radiance Exfoliating Scrub': 'Exfoliación Suave'
+    };
+    return badges[productName] || 'Exclusivo';
+  };
 
   const [carouselIndex, setCarouselIndex] = useState(0);
 
@@ -146,87 +178,89 @@ export default function HomeView({
             </div>
 
             {/* Right Column: Luxury Product Carousel with Floating Card */}
-            <div className="lg:col-span-5 relative flex flex-col items-center justify-center">
-              <div className="relative w-full max-w-sm sm:max-w-md aspect-3/4 rounded-t-full overflow-hidden border border-[#EADCC9]/40 shadow-xl">
-                
-                <AnimatePresence mode="wait">
-                  <motion.img
-                    key={carouselIndex}
-                    src={activeCarousel.image}
-                    alt={activeCarousel.product.name}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.5 }}
-                    className="w-full h-full object-cover select-none"
-                    referrerPolicy="no-referrer"
-                  />
-                </AnimatePresence>
-                
-                {/* Floating Detail Tag Gradient overlay */}
-                <div className="absolute inset-0 bg-linear-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
-                
-                {/* Minimalist Carousel Buttons Overlaid inside the image */}
-                <div className="absolute bottom-4 right-4 flex items-center space-x-2 z-20">
-                  <button
-                    onClick={handlePrev}
-                    className="w-8 h-8 rounded-full border border-white/60 bg-black/30 hover:bg-black/60 text-white flex items-center justify-center transition-all focus:outline-none cursor-pointer"
-                    title="Anterior"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={handleNext}
-                    className="w-8 h-8 rounded-full border border-white/60 bg-black/30 hover:bg-black/60 text-white flex items-center justify-center transition-all focus:outline-none cursor-pointer"
-                    title="Siguiente"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {/* Little Page Indicator Dots */}
-                <div className="absolute top-4 right-6 flex space-x-1.5 z-20">
-                  {CAROUSEL_ITEMS.map((_, dotIdx) => (
-                    <button
-                      key={dotIdx}
-                      onClick={() => setCarouselIndex(dotIdx)}
-                      className={`w-1.5 h-1.5 rounded-full transition-all cursor-pointer ${
-                        dotIdx === carouselIndex ? 'bg-[#C5A880] w-3' : 'bg-white/40'
-                      }`}
+            {CAROUSEL_ITEMS.length > 0 && (
+              <div className="lg:col-span-5 relative flex flex-col items-center justify-center">
+                <div className="relative w-full max-w-sm sm:max-w-md aspect-3/4 rounded-t-full overflow-hidden border border-[#EADCC9]/40 shadow-xl">
+                  
+                  <AnimatePresence mode="wait">
+                    <motion.img
+                      key={carouselIndex}
+                      src={activeCarousel.image}
+                      alt={activeCarousel.product.name}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.5 }}
+                      className="w-full h-full object-cover select-none"
+                      referrerPolicy="no-referrer"
                     />
-                  ))}
-                </div>
-              </div>
-
-              {/* Floating Alabaster Card with Animated Transition details */}
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={carouselIndex}
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -15 }}
-                  transition={{ duration: 0.4 }}
-                  className="absolute bottom-4 -left-4 sm:left-4 bg-[#FAF8F5]/95 backdrop-blur-md p-6 max-w-[260px] border border-[#EADCC9] shadow-lg text-left z-10"
-                >
-                  <p className="font-serif italic text-sm text-[#C5A880]">{activeCarousel.badge}</p>
-                  <h3 className="font-serif tracking-widest text-[#2A2621] uppercase text-base mt-1">{activeCarousel.product.name}</h3>
-                  <p className="text-xs text-[#7D7569] mt-2 leading-relaxed h-[60px] overflow-hidden">
-                    {activeCarousel.quote}
-                  </p>
-                  <div className="mt-3 flex items-center justify-between">
-                    <span className="font-mono text-xs font-semibold text-[#1C1917]">
-                      {convertAndFormatPrice(activeCarousel.product.price, selectedCountryCode)}
-                    </span>
+                  </AnimatePresence>
+                  
+                  {/* Floating Detail Tag Gradient overlay */}
+                  <div className="absolute inset-0 bg-linear-to-t from-black/50 via-transparent to-transparent pointer-events-none" />
+                  
+                  {/* Minimalist Carousel Buttons Overlaid inside the image */}
+                  <div className="absolute bottom-4 right-4 flex items-center space-x-2 z-20">
                     <button
-                      onClick={() => onViewProductDetails(activeCarousel.product)}
-                      className="text-[10px] uppercase tracking-widest text-[#2A2621] font-bold border-b border-[#C5A880] hover:text-[#C5A880] transition-colors cursor-pointer"
+                      onClick={handlePrev}
+                      className="w-8 h-8 rounded-full border border-white/60 bg-black/30 hover:bg-black/60 text-white flex items-center justify-center transition-all focus:outline-none cursor-pointer"
+                      title="Anterior"
                     >
-                      Ver Detalles
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={handleNext}
+                      className="w-8 h-8 rounded-full border border-white/60 bg-black/30 hover:bg-black/60 text-white flex items-center justify-center transition-all focus:outline-none cursor-pointer"
+                      title="Siguiente"
+                    >
+                      <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>
-                </motion.div>
-              </AnimatePresence>
-            </div>
+
+                  {/* Little Page Indicator Dots */}
+                  <div className="absolute top-4 right-6 flex space-x-1.5 z-20">
+                    {CAROUSEL_ITEMS.map((_, dotIdx) => (
+                      <button
+                        key={dotIdx}
+                        onClick={() => setCarouselIndex(dotIdx)}
+                        className={`w-1.5 h-1.5 rounded-full transition-all cursor-pointer ${
+                          dotIdx === carouselIndex ? 'bg-[#C5A880] w-3' : 'bg-white/40'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Floating Alabaster Card with Animated Transition details */}
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={carouselIndex}
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -15 }}
+                    transition={{ duration: 0.4 }}
+                    className="absolute bottom-4 -left-4 sm:left-4 bg-[#FAF8F5]/95 backdrop-blur-md p-6 max-w-[260px] border border-[#EADCC9] shadow-lg text-left z-10"
+                  >
+                    <p className="font-serif italic text-sm text-[#C5A880]">{activeCarousel.badge}</p>
+                    <h3 className="font-serif tracking-widest text-[#2A2621] uppercase text-base mt-1">{activeCarousel.product.name}</h3>
+                    <p className="text-xs text-[#7D7569] mt-2 leading-relaxed h-[60px] overflow-hidden">
+                      {activeCarousel.quote}
+                    </p>
+                    <div className="mt-3 flex items-center justify-between">
+                      <span className="font-mono text-xs font-semibold text-[#1C1917]">
+                        {convertAndFormatPrice(activeCarousel.product.price, selectedCountryCode)}
+                      </span>
+                      <button
+                        onClick={() => onViewProductDetails(activeCarousel.product)}
+                        className="text-[10px] uppercase tracking-widest text-[#2A2621] font-bold border-b border-[#C5A880] hover:text-[#C5A880] transition-colors cursor-pointer"
+                      >
+                        Ver Detalles
+                      </button>
+                    </div>
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            )}
 
           </div>
         </div>
