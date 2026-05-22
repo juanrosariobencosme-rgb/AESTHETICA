@@ -828,6 +828,20 @@ export default function AdminPanel({
                       <div>
                         <label className="font-semibold text-stone-700 block mb-1">Imagen URL</label>
                         <input type="text" value={newProdImage} onChange={e => setNewProdImage(e.target.value)} className="w-full p-2.5 border bg-white" />
+                        {newProdImage && (
+                          <div className="mt-2">
+                            <img 
+                              src={newProdImage} 
+                              alt="Vista previa" 
+                              className="w-32 h-32 object-cover border border-[#EADCC9]/50"
+                              referrerPolicy="no-referrer"
+                              onError={(e) => {
+                                e.currentTarget.src = 'https://via.placeholder.com/128?text=Error';
+                              }}
+                            />
+                            <p className="text-[10px] text-stone-500 mt-1">Vista previa de la imagen</p>
+                          </div>
+                        )}
                       </div>
                       <div>
                         <label className="font-semibold text-stone-700 block mb-1">Categoría Diagnóstico</label>
@@ -1361,6 +1375,20 @@ export default function AdminPanel({
                       <div>
                         <label className="font-bold text-stone-700 block mb-1">Imagen URL del Set</label>
                         <input type="text" value={newPromoImage} onChange={e => setNewPromoImage(e.target.value)} className="w-full p-2 border" />
+                        {newPromoImage && (
+                          <div className="mt-2">
+                            <img 
+                              src={newPromoImage} 
+                              alt="Vista previa" 
+                              className="w-32 h-32 object-cover border border-[#EADCC9]/50"
+                              referrerPolicy="no-referrer"
+                              onError={(e) => {
+                                e.currentTarget.src = 'https://via.placeholder.com/128?text=Error';
+                              }}
+                            />
+                            <p className="text-[10px] text-stone-500 mt-1">Vista previa de la imagen</p>
+                          </div>
+                        )}
                       </div>
                     </div>
 
