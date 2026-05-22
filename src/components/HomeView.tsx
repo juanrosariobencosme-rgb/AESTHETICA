@@ -25,14 +25,6 @@ export default function HomeView({
   // Highlight three products on home screen
   const featuredProducts = products.slice(0, 3);
 
-  // Carousel Items definition - only use products from actual inventory
-  const CAROUSEL_ITEMS = products.slice(0, 4).map((product, index) => ({
-    product: product,
-    quote: getProductQuote(product.name),
-    badge: getProductBadge(product.name),
-    image: product.image
-  }));
-
   const getProductQuote = (productName: string): string => {
     const quotes: Record<string, string> = {
       'Lumière Dorée': 'Tratamiento concentrado con péptidos y partículas finas de oro 24K para un brillo de seda.',
@@ -84,6 +76,14 @@ export default function HomeView({
     };
     return badges[productName] || 'Exclusivo';
   };
+
+  // Carousel Items definition - only use products from actual inventory
+  const CAROUSEL_ITEMS = products.slice(0, 4).map((product, index) => ({
+    product: product,
+    quote: getProductQuote(product.name),
+    badge: getProductBadge(product.name),
+    image: product.image
+  }));
 
   const [carouselIndex, setCarouselIndex] = useState(0);
 
