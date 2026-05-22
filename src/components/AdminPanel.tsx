@@ -58,6 +58,15 @@ export default function AdminPanel({
   const [creatingPromo, setCreatingPromo] = useState<boolean>(false);
   const [showOpenCashForm, setShowOpenCashForm] = useState<boolean>(false);
   const [showCloseCashForm, setShowCloseCashForm] = useState<boolean>(false);
+  const [showRegisterForm, setShowRegisterForm] = useState<boolean>(false);
+
+  // Manual cash entry state
+  const [manualCashAmount, setManualCashAmount] = useState<number>(0);
+  const [manualCashType, setManualCashType] = useState<'cash' | 'transfer' | 'expense'>('cash');
+  const [manualCashDescription, setManualCashDescription] = useState<string>('');
+
+  // Cash history state
+  const [cashHistory, setCashHistory] = useState<any[]>([]);
 
   // New product input state
   const [newProdName, setNewProdName] = useState('');
@@ -91,6 +100,67 @@ export default function AdminPanel({
 
   // Cash closure counting states
   const [closurePhysicalCash, setClosurePhysicalCash] = useState<number>(0);
+
+  // Manual cash registration handler
+  const handleRegisterCash = () => {
+    if (!manualCashAmount || manualCashAmount <= 0) {
+      showFeedback('Por favor ingresa un monto válido', true);
+      return;
+    }
+
+    const entry = {
+      id: Date.now(),
+      date: new Date().toISOString(),
+      amount: manualCashType === 'expense' ? -manualCashAmount : manualCashAmount,
+      type: manualCashType,
+      description: manualCashDescription || (manualCashType === 'cash' ? 'Venta en efectivo' : manualCashType === 'transfer' ? 'Transferencia' : 'Gasto')
+    };
+
+    setCashHistory([...cashHistory, entry]);
+    
+    // Update cash session
+    if (cashSession.isOpen) {
+      if (manualCashType === 'cash') {
+        setCashSession({
+          ...cashSession,
+          salesCash: cashSession.salesCash + manualCashAmount,
+          history: [...(cashSession.history || []), {
+            date: new Date().toISOString(),
+            action: 'Venta Efectivo Manual',
+            amount: manualCashAmount,
+            notes: manualCashDescription
+          }]
+        });
+      } else if (manualCashType === 'transfer') {
+        setCashSession({
+          ...cashSession,
+          salesTransfer: cashSession.salesTransfer + manualCashAmount,
+          history: [...(cashSession.history || []), {
+            date: new Date().toISOString(),
+            action: 'Transferencia Manual',
+            amount: manualCashAmount,
+            notes: manualCashDescription
+          }]
+        });
+      } else if (manualCashType === 'expense') {
+        setCashSession({
+          ...cashSession,
+          history: [...(cashSession.history || []), {
+            date: new Date().toISOString(),
+            action: 'Gasto Registrado',
+            amount: -manualCashAmount,
+            notes: manualCashDescription
+          }]
+        });
+      }
+    }
+
+    // Reset form
+    setManualCashAmount(0);
+    setManualCashDescription('');
+    setShowRegisterForm(false);
+    showFeedback('Movimiento registrado exitosamente');
+  };
 
   // Custom finance ranges
   const [customRangeStart, setCustomRangeStart] = useState('');
@@ -1377,6 +1447,117 @@ export default function AdminPanel({
                         Cerrar Caja
                       </button>
                     )}
+                    {(showOpenCashForm || showCloseCashForm) && (
+                      <button
+                        onClick={() => setShowRegisterForm(!showRegisterForm)}
+                        className="px-4 py-2 bg-[#C5A880] hover:bg-[#2A2621] text-white text-[10px] uppercase font-bold tracking-widest transition-all whitespace-nowrap"
+                      >
+                        Registrar
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Formulario de registro manual */}
+                {showRegisterForm && (
+                  <div className="border-2 border-[#C5A880] bg-[#FAF8F5] p-4 sm:p-6">
+                    <h4 className="font-serif text-base sm:text-lg text-[#2A2621] mb-4">Registrar Movimiento Manual</h4>
+                    <p className="text-xs text-[#7D7569] mb-4">Registre ventas, transferencias o gastos manualmente en la caja chica.</p>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] uppercase font-bold text-stone-700 block">Tipo de Movimiento</label>
+                        <select
+                          value={manualCashType}
+                          onChange={e => setManualCashType(e.target.value as 'cash' | 'transfer' | 'expense')}
+                          className="w-full text-xs p-3 bg-white border border-[#EADCC9] focus:outline-none focus:border-[#C5A880]"
+                        >
+                          <option value="cash">Venta en Efectivo</option>
+                          <option value="transfer">Transferencia</option>
+                          <option value="expense">Gasto</option>
+                        </select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] uppercase font-bold text-stone-700 block">Monto (USD)</label>
+                        <input
+                          type="number"
+                          value={manualCashAmount}
+                          onChange={e => setManualCashAmount(Number(e.target.value))}
+                          placeholder="0.00"
+                          className="w-full text-xs p-3 bg-white border border-[#EADCC9] focus:outline-none focus:border-[#C5A880]"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] uppercase font-bold text-stone-700 block">Descripción</label>
+                        <input
+                          type="text"
+                          value={manualCashDescription}
+                          onChange={e => setManualCashDescription(e.target.value)}
+                          placeholder="Detalles del movimiento..."
+                          className="w-full text-xs p-3 bg-white border border-[#EADCC9] focus:outline-none focus:border-[#C5A880]"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex gap-4">
+                      <button
+                        onClick={handleRegisterCash}
+                        className="flex-1 py-3 bg-[#C5A880] hover:bg-[#2A2621] text-white text-[10px] uppercase font-bold tracking-widest transition-all"
+                      >
+                        Registrar Movimiento
+                      </button>
+                      <button
+                        onClick={() => setShowRegisterForm(false)}
+                        className="px-6 py-3 border border-stone-300 text-stone-700 text-[10px] uppercase font-bold tracking-widest hover:bg-stone-100 transition-all"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tabla de historial de caja chica */}
+                <div className="border border-[#EADCC9] bg-white p-4 sm:p-6">
+                  <h4 className="font-serif text-base sm:text-lg text-[#2A2621] mb-4">Historial de Caja Chica</h4>
+                  <div className="max-h-80 overflow-y-auto">
+                    <table className="w-full text-xs">
+                      <thead className="bg-stone-50 sticky top-0">
+                        <tr>
+                          <th className="text-left p-3 font-bold text-stone-700">Fecha</th>
+                          <th className="text-left p-3 font-bold text-stone-700">Tipo</th>
+                          <th className="text-left p-3 font-bold text-stone-700">Descripción</th>
+                          <th className="text-right p-3 font-bold text-stone-700">Monto</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {cashHistory.length === 0 ? (
+                          <tr>
+                            <td colSpan={4} className="p-4 text-center text-stone-500">No hay movimientos registrados</td>
+                          </tr>
+                        ) : (
+                          cashHistory.map((entry) => (
+                            <tr key={entry.id} className="border-b border-stone-100 hover:bg-stone-50">
+                              <td className="p-3 text-stone-600">{new Date(entry.date).toLocaleString()}</td>
+                              <td className="p-3">
+                                <span className={`px-2 py-1 rounded text-[9px] font-bold uppercase ${
+                                  entry.type === 'cash' ? 'bg-emerald-100 text-emerald-700' :
+                                  entry.type === 'transfer' ? 'bg-blue-100 text-blue-700' :
+                                  'bg-rose-100 text-rose-700'
+                                }`}>
+                                  {entry.type === 'cash' ? 'Efectivo' : entry.type === 'transfer' ? 'Transferencia' : 'Gasto'}
+                                </span>
+                              </td>
+                              <td className="p-3 text-stone-800">{entry.description}</td>
+                              <td className={`p-3 text-right font-mono font-bold ${
+                                entry.amount > 0 ? 'text-emerald-700' : 'text-rose-700'
+                              }`}>
+                                {entry.amount > 0 ? '+' : ''}{convertAndFormatPrice(entry.amount, selectedCountryCode)}
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
 
@@ -1478,7 +1659,10 @@ export default function AdminPanel({
                     <div className="border border-[#EADCC9] bg-white p-4 sm:p-6">
                       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
                         <h4 className="font-serif text-base sm:text-lg text-[#2A2621]">Movimientos de Caja</h4>
-                        <button className="text-[10px] uppercase tracking-wider text-[#C5A880] font-bold hover:text-[#2A2621] whitespace-nowrap">
+                        <button 
+                          onClick={() => setShowRegisterForm(!showRegisterForm)}
+                          className="text-[10px] uppercase tracking-wider text-[#C5A880] font-bold hover:text-[#2A2621] whitespace-nowrap"
+                        >
                           + Agregar Movimiento Manual
                         </button>
                       </div>
