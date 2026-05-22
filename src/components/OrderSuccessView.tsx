@@ -1,8 +1,9 @@
 import { useState, useRef, DragEvent, ChangeEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Check, ClipboardCopy, Send, CloudUpload, FileCheck } from 'lucide-react';
+import { Check, ClipboardCopy, Send, CloudUpload, FileCheck, Download } from 'lucide-react';
 import { CartItem } from '../types';
 import { convertAndFormatPrice } from '../utils/currency';
+import jsPDF from 'jspdf';
 
 interface OrderSuccessViewProps {
   orderInfo: { name: string; email: string; paymentMethod: string; finalTotal: number; items?: CartItem[] } | null;
@@ -31,6 +32,98 @@ export default function OrderSuccessView({
     navigator.clipboard.writeText(clabeNumber);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const generatePDF = () => {
+    const doc = new jsPDF();
+    
+    // Header
+    doc.setFontSize(20);
+    doc.setTextColor(42, 38, 33);
+    doc.text('AESTHETICA ATELIER', 20, 20);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(125, 117, 105);
+    doc.text('Atelier Skin Lab SA de CV', 20, 28);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(71, 85, 105);
+    doc.text(`Orden: #${orderNumber}`, 150, 20);
+    doc.text(new Date().toLocaleDateString(), 150, 28);
+    
+    // Line separator
+    doc.setDrawColor(234, 220, 201);
+    doc.line(20, 35, 190, 35);
+    
+    // Customer info
+    doc.setFontSize(12);
+    doc.setTextColor(42, 38, 33);
+    doc.text('Cliente', 20, 50);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(71, 85, 105);
+    doc.text(orderInfo?.name || 'Cliente Distinguido', 20, 58);
+    doc.text(orderInfo?.email || 'N/A', 20, 65);
+    
+    // Payment method
+    doc.setFontSize(12);
+    doc.setTextColor(42, 38, 33);
+    doc.text('Método de Pago', 120, 50);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(71, 85, 105);
+    const paymentStr = orderInfo?.paymentMethod === 'cod' ? 'Pago Contra Entrega' : 'Transferencia Bancaria';
+    doc.text(paymentStr, 120, 58);
+    
+    // Products
+    doc.setFontSize(12);
+    doc.setTextColor(42, 38, 33);
+    doc.text('Productos', 20, 80);
+    
+    let yPosition = 90;
+    items.forEach((item, index) => {
+      const isRealItem = 'product' in item;
+      const name = isRealItem ? item.product.name : item.name;
+      const price = isRealItem ? item.product.price : item.price;
+      
+      doc.setFontSize(9);
+      doc.setTextColor(71, 85, 105);
+      doc.text(`${index + 1}. ${name}`, 20, yPosition);
+      doc.text(convertAndFormatPrice(price, selectedCountryCode), 150, yPosition);
+      
+      yPosition += 8;
+    });
+    
+    // Totals
+    doc.setDrawColor(234, 220, 201);
+    doc.line(20, yPosition + 5, 190, yPosition + 5);
+    
+    yPosition += 15;
+    doc.setFontSize(10);
+    doc.setTextColor(125, 117, 105);
+    doc.text('Subtotal:', 120, yPosition);
+    doc.text(convertAndFormatPrice(subtotal, selectedCountryCode), 150, yPosition);
+    
+    yPosition += 8;
+    doc.text('Envío:', 120, yPosition);
+    doc.text(convertAndFormatPrice(shippingCost, selectedCountryCode), 150, yPosition);
+    
+    yPosition += 8;
+    doc.setFontSize(12);
+    doc.setTextColor(42, 38, 33);
+    doc.setFont(undefined, 'bold');
+    doc.text('Total:', 120, yPosition);
+    doc.text(convertAndFormatPrice(total, selectedCountryCode), 150, yPosition);
+    
+    // Footer
+    doc.setFontSize(8);
+    doc.setTextColor(125, 117, 105);
+    doc.setFont(undefined, 'normal');
+    doc.text('Este ticket representa un comprobante formal de adquisición molecular dermatológica.', 20, 270);
+    doc.text('Gracias por preferir el Atelier Aesthetica.', 20, 275);
+    
+    // Save PDF
+    doc.save(`Factura_${orderNumber}.pdf`);
   };
 
   const handleDragOver = (e: DragEvent) => {
@@ -391,17 +484,28 @@ export default function OrderSuccessView({
                 </div>
 
                 {/* CTA Action button - ALWAYS ENABLES DIRECT SENDING OF ORDERS */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    window.open(whatsappUrl, '_blank');
-                  }}
-                  className="mt-8 w-full py-4 px-6 rounded-full font-sans text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all duration-300 font-semibold bg-[#25D366] text-white hover:bg-[#20ba5a] cursor-pointer hover:shadow-md transform hover:-translate-y-0.5 active:translate-y-0"
-                  id="wa-button"
-                >
-                  <Send className="w-4 h-4 text-white" />
-                  <span>Enviar vía WhatsApp</span>
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={generatePDF}
+                    className="flex-1 py-4 px-6 rounded-full font-sans text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all duration-300 font-semibold bg-stone-800 text-white hover:bg-stone-700 cursor-pointer hover:shadow-md transform hover:-translate-y-0.5 active:translate-y-0"
+                  >
+                    <Download className="w-4 h-4 text-white" />
+                    <span>Descargar Factura PDF</span>
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.open(whatsappUrl, '_blank');
+                    }}
+                    className="flex-1 py-4 px-6 rounded-full font-sans text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all duration-300 font-semibold bg-[#25D366] text-white hover:bg-[#20ba5a] cursor-pointer hover:shadow-md transform hover:-translate-y-0.5 active:translate-y-0"
+                    id="wa-button"
+                  >
+                    <Send className="w-4 h-4 text-white" />
+                    <span>Enviar vía WhatsApp</span>
+                  </button>
+                </div>
 
                 {/* Return home back trigger */}
                 <div className="mt-8 text-center">
