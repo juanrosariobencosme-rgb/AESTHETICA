@@ -9,7 +9,22 @@ export const ordersApi = {
       .order('date', { ascending: false });
     
     if (error) throw error;
-    return data as Order[];
+    
+    // Transform snake_case to camelCase
+    return data.map(order => ({
+      id: order.id,
+      customerName: order.customer_name,
+      customerEmail: order.customer_email,
+      paymentMethod: order.payment_method,
+      items: order.items,
+      subtotal: order.subtotal,
+      tax: order.tax,
+      shipping: order.shipping,
+      total: order.total,
+      date: order.date,
+      status: order.status,
+      notes: order.notes
+    })) as Order[];
   },
 
   async getById(id: string): Promise<Order | null> {
@@ -20,30 +35,107 @@ export const ordersApi = {
       .single();
     
     if (error) throw error;
-    return data as Order;
+    
+    if (!data) return null;
+    
+    // Transform snake_case to camelCase
+    return {
+      id: data.id,
+      customerName: data.customer_name,
+      customerEmail: data.customer_email,
+      paymentMethod: data.payment_method,
+      items: data.items,
+      subtotal: data.subtotal,
+      tax: data.tax,
+      shipping: data.shipping,
+      total: data.total,
+      date: data.date,
+      status: data.status,
+      notes: data.notes
+    } as Order;
   },
 
   async create(order: Order): Promise<Order> {
+    // Transform camelCase to snake_case
+    const dbOrder = {
+      id: order.id,
+      customer_name: order.customerName,
+      customer_email: order.customerEmail,
+      payment_method: order.paymentMethod,
+      items: order.items,
+      subtotal: order.subtotal,
+      tax: order.tax,
+      shipping: order.shipping,
+      total: order.total,
+      date: order.date,
+      status: order.status,
+      notes: order.notes
+    };
+    
     const { data, error } = await supabase
       .from('orders')
-      .insert(order)
+      .insert(dbOrder)
       .select()
       .single();
     
     if (error) throw error;
-    return data as Order;
+    
+    // Transform back to camelCase
+    return {
+      id: data.id,
+      customerName: data.customer_name,
+      customerEmail: data.customer_email,
+      paymentMethod: data.payment_method,
+      items: data.items,
+      subtotal: data.subtotal,
+      tax: data.tax,
+      shipping: data.shipping,
+      total: data.total,
+      date: data.date,
+      status: data.status,
+      notes: data.notes
+    } as Order;
   },
 
   async update(id: string, order: Partial<Order>): Promise<Order> {
+    // Transform camelCase to snake_case
+    const dbOrder: any = {};
+    if (order.customerName !== undefined) dbOrder.customer_name = order.customerName;
+    if (order.customerEmail !== undefined) dbOrder.customer_email = order.customerEmail;
+    if (order.paymentMethod !== undefined) dbOrder.payment_method = order.paymentMethod;
+    if (order.items !== undefined) dbOrder.items = order.items;
+    if (order.subtotal !== undefined) dbOrder.subtotal = order.subtotal;
+    if (order.tax !== undefined) dbOrder.tax = order.tax;
+    if (order.shipping !== undefined) dbOrder.shipping = order.shipping;
+    if (order.total !== undefined) dbOrder.total = order.total;
+    if (order.date !== undefined) dbOrder.date = order.date;
+    if (order.status !== undefined) dbOrder.status = order.status;
+    if (order.notes !== undefined) dbOrder.notes = order.notes;
+    
     const { data, error } = await supabase
       .from('orders')
-      .update(order)
+      .update(dbOrder)
       .eq('id', id)
       .select()
       .single();
     
     if (error) throw error;
-    return data as Order;
+    
+    // Transform back to camelCase
+    return {
+      id: data.id,
+      customerName: data.customer_name,
+      customerEmail: data.customer_email,
+      paymentMethod: data.payment_method,
+      items: data.items,
+      subtotal: data.subtotal,
+      tax: data.tax,
+      shipping: data.shipping,
+      total: data.total,
+      date: data.date,
+      status: data.status,
+      notes: data.notes
+    } as Order;
   },
 
   async delete(id: string): Promise<void> {
@@ -64,6 +156,21 @@ export const ordersApi = {
       .single();
     
     if (error) throw error;
-    return data as Order;
+    
+    // Transform back to camelCase
+    return {
+      id: data.id,
+      customerName: data.customer_name,
+      customerEmail: data.customer_email,
+      paymentMethod: data.payment_method,
+      items: data.items,
+      subtotal: data.subtotal,
+      tax: data.tax,
+      shipping: data.shipping,
+      total: data.total,
+      date: data.date,
+      status: data.status,
+      notes: data.notes
+    } as Order;
   }
 };
