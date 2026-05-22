@@ -101,7 +101,7 @@ export const PRODUCTS: Product[] = [
     ingredients: ['Resynthesis Sturgeon Caviar Extract', 'Myrothamnus Flabellifolia (Resurrection Plant)', 'Amber Nectar Bio-ferment', 'Tetrapeptide-21'],
     benefits: ['Restores youth-density to sagging skin tissue', 'Promotes dynamic cellular oxygenation', 'Creates an immediately smoother cutaneous canvas'],
     usage: 'Apply a very small amount after your serum. Smooth from the center of the face outwards, finishing on the neck and décolleté.',
-    image: 'https://images.unsplash.com/photo-1608248597481-496100c80836?q=80&w=1000',
+    image: 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?q=80&w=1000',
     concern: 'sculpt',
     rating: 5.0,
     texture: 'Rich, high-density nourishing crèm gel'
@@ -116,7 +116,7 @@ export const PRODUCTS: Product[] = [
     ingredients: ['Organic Neroli Hydrosol', 'White Tea Polyphenols', 'Cucumber Fruit Ferment', 'Aloe Vera Leaf juice'],
     benefits: ['Instantly calms environmental tight-dry feelings', 'Balancing pH levels for healthy biome', 'Prepares corneal cells for maximum serum integration'],
     usage: 'Mist generously over face and neck after cleansing, or at any time of day to revive tired, flight-bound skins.',
-    image: 'https://images.unsplash.com/photo-1617897903246-719242758050?q=80&w=1000',
+    image: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?q=80&w=1000',
     concern: 'calm',
     rating: 4.6,
     texture: 'Ultra-fine vapor mist'
@@ -146,7 +146,7 @@ export const PRODUCTS: Product[] = [
     ingredients: ['Bakuchiol 2%', 'Rosehip Seed Oil', 'Sea Buckthorn Oil', 'Vitamin E', 'Blue Tansy Oil'],
     benefits: ['Gentle retinol alternative for sensitive skin', 'Reduces fine lines and wrinkles overnight', 'Calms inflammation and redness'],
     usage: 'Warm 3-4 drops between palms and press into face and neck as the last step of your nighttime routine.',
-    image: 'https://images.unsplash.com/photo-1608248597481-496100c80836?q=80&w=1000',
+    image: 'https://images.unsplash.com/photo-1612817288484-6f916006741a?q=80&w=1000',
     concern: 'sculpt',
     rating: 4.7,
     texture: 'Rich nourishing oil'
@@ -161,7 +161,7 @@ export const PRODUCTS: Product[] = [
     ingredients: ['Arctic Algae Extract', 'Volcanic Clay', 'Kaolin', 'Spirulina', 'Peppermint Oil'],
     benefits: ['Deeply purifies and detoxifies pores', 'Controls excess oil production', 'Leaves skin feeling refreshed and balanced'],
     usage: 'Apply a generous layer to clean skin. Leave on for 15-20 minutes, then rinse with warm water. Use 1-2 times weekly.',
-    image: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?q=80&w=1000',
+    image: 'https://images.unsplash.com/photo-1596755389378-c31d21fd1273?q=80&w=1000',
     concern: 'calm',
     rating: 4.5,
     texture: 'Cooling clay mask'
@@ -176,7 +176,7 @@ export const PRODUCTS: Product[] = [
     ingredients: ['Matrixyl 3000', 'Argireline', 'Copper Peptides', 'Shea Butter', 'Jojoba Oil'],
     benefits: ['Reduces appearance of expression lines', 'Firms and lifts sagging skin', 'Provides 24-hour deep hydration'],
     usage: 'Apply morning and night to face and neck after serum. Massage in upward circular motions.',
-    image: 'https://images.unsplash.com/photo-1601049541289-9b1b7bbbfe19?q=80&w=1000',
+    image: 'https://images.unsplash.com/photo-1570197788417-0e82375c9371?q=80&w=1000',
     concern: 'sculpt',
     rating: 4.9,
     texture: 'Rich luxurious cream'
@@ -191,7 +191,7 @@ export const PRODUCTS: Product[] = [
     ingredients: ['Genuine Rose Quartz', 'Metal Alloy Frame'],
     benefits: ['Reduces facial puffiness and tension', 'Enhances product absorption', 'Promotes lymphatic drainage'],
     usage: 'Store in refrigerator for cooling effect. Roll over face in upward and outward motions after applying skincare products.',
-    image: 'https://images.unsplash.com/photo-1617897903246-719242758050?q=80&w=1000',
+    image: 'https://images.unsplash.com/photo-1599305090598-fe179d501227?q=80&w=1000',
     concern: 'calm',
     rating: 4.6,
     texture: 'Smooth crystal stone'
@@ -206,7 +206,7 @@ export const PRODUCTS: Product[] = [
     ingredients: ['L-Ascorbic Acid 20%', 'Ferulic Acid', 'Vitamin E', 'Hyaluronic Acid', 'Botanical Extracts'],
     benefits: ['Brightens and evens skin tone', 'Protects against environmental damage', 'Reduces appearance of dark spots'],
     usage: 'Apply 3-4 drops to cleansed skin morning only. Follow with sunscreen for optimal protection.',
-    image: 'https://images.unsplash.com/photo-1616683693504-3ea7e9ad6fec?q=80&w=1000',
+    image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?q=80&w=1000',
     concern: 'radiance',
     rating: 4.8,
     texture: 'Lightweight serum'
@@ -221,7 +221,7 @@ export const PRODUCTS: Product[] = [
     ingredients: ['Multi-Molecular Hyaluronic Acid', 'Aloe Vera', 'Cucumber Extract', 'Vitamin B5'],
     benefits: ['Instant hydration and plumping', 'Soothes and refreshes skin', 'Sets makeup for long-lasting wear'],
     usage: 'Spritz generously over face throughout the day. Can be used over makeup for a dewy finish.',
-    image: 'https://images.unsplash.com/photo-1617897903246-719242758050?q=80&w=1000',
+    image: 'https://images.unsplash.com/photo-1608248597481-496100c80836?q=80&w=1000',
     concern: 'hydration',
     rating: 4.5,
     texture: 'Fine mist spray'
@@ -236,7 +236,7 @@ export const PRODUCTS: Product[] = [
     ingredients: ['Encapsulated Retinol 0.5%', 'Peptides', 'Ceramides', 'Niacinamide', 'Squalane'],
     benefits: ['Reduces fine lines and wrinkles', 'Improves skin texture and tone', 'Gentle formula for sensitive skin'],
     usage: 'Apply a pea-sized amount to face and neck at night after cleansing. Use sunscreen during the day.',
-    image: 'https://images.unsplash.com/photo-1608248597481-496100c80836?q=80&w=1000',
+    image: 'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?q=80&w=1000',
     concern: 'sculpt',
     rating: 4.7,
     texture: 'Rich night cream'
@@ -251,7 +251,7 @@ export const PRODUCTS: Product[] = [
     ingredients: ['Green Tea Extract', 'Aloe Vera', 'Chamomile', 'Vitamin E', 'Glycerin'],
     benefits: ['Gently cleanses without stripping', 'Provides antioxidant protection', 'Soothes and calms skin'],
     usage: 'Massage onto damp skin in circular motions. Rinse thoroughly with warm water. Use morning and night.',
-    image: 'https://images.unsplash.com/photo-1617897903246-719242758050?q=80&w=1000',
+    image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?q=80&w=1000',
     concern: 'calm',
     rating: 4.4,
     texture: 'Refreshing gel cleanser'
@@ -266,7 +266,7 @@ export const PRODUCTS: Product[] = [
     ingredients: ['Marine Collagen', 'Peptides', 'Caffeine', 'Vitamin C', 'Hyaluronic Acid'],
     benefits: ['Reduces fine lines and wrinkles', 'Diminishes dark circles and puffiness', 'Hydrates delicate eye area'],
     usage: 'Apply a small amount around the eye area morning and night. Pat gently with ring finger until absorbed.',
-    image: 'https://images.unsplash.com/photo-1617897903246-719242758050?q=80&w=1000',
+    image: 'https://images.unsplash.com/photo-1570197788417-0e82375c9371?q=80&w=1000',
     concern: 'sculpt',
     rating: 4.6,
     texture: 'Lightweight eye cream'
@@ -281,7 +281,7 @@ export const PRODUCTS: Product[] = [
     ingredients: ['Zinc Oxide', 'Titanium Dioxide', 'Antioxidants', 'Hyaluronic Acid', 'Niacinamide'],
     benefits: ['SPF 50 broad spectrum protection', 'Non-greasy formula', 'Antioxidant protection'],
     usage: 'Apply generously to face and neck 15 minutes before sun exposure. Reapply every 2 hours.',
-    image: 'https://images.unsplash.com/photo-1617897903246-719242758050?q=80&w=1000',
+    image: 'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?q=80&w=1000',
     concern: 'calm',
     rating: 4.7,
     texture: 'Lightweight sunscreen'
@@ -296,7 +296,7 @@ export const PRODUCTS: Product[] = [
     ingredients: ['Jojoba Beads', 'Papaya Enzymes', 'Pineapple Enzymes', 'Aloe Vera', 'Vitamin E'],
     benefits: ['Gently exfoliates dead skin cells', 'Brightens and smooths skin', 'Non-irritating formula'],
     usage: 'Apply to damp skin and massage gently in circular motions. Rinse thoroughly. Use 1-2 times weekly.',
-    image: 'https://images.unsplash.com/photo-1617897903246-719242758050?q=80&w=1000',
+    image: 'https://images.unsplash.com/photo-1596755389378-c31d21fd1273?q=80&w=1000',
     concern: 'radiance',
     rating: 4.5,
     texture: 'Gentle scrub'
