@@ -76,11 +76,11 @@ export default function HomeView({
     <div className="bg-[#FAF8F5] text-[#2A2621]">
       
       {/* 1. Hero Section - Quiet Luxury Overlapping Layout */}
-      <section className="relative min-h-[85vh] flex items-center overflow-hidden py-12 md:py-20 lg:py-24 border-b border-[#EADCC9]/20">
+      <section className="relative min-h-[85vh] flex items-center overflow-hidden py-16 md:py-20 lg:py-24 border-b border-[#EADCC9]/20">
         <div className="absolute inset-0 bg-radial-[circle_at_70%_50%] from-[#F2ECE4] via-[#FAF8F5] to-[#FAF8F5] opacity-65 -z-10" />
         
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             
             {/* Left Column: Display Typography & Poetic Hooks */}
             <div className="lg:col-span-7 space-y-8 pr-0 lg:pr-8">
@@ -233,13 +233,13 @@ export default function HomeView({
       </section>
 
       {/* 2. Editorial Our Philosophy / Concept */}
-      <section className="py-20 md:py-28 bg-[#FAF8F5]">
+      <section className="py-16 md:py-20 lg:py-28 bg-[#FAF8F5]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {EDITORIALS.map((edit, idx) => (
             <div
               key={edit.id}
-              className={`grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-center ${
-                idx > 0 ? 'mt-24 md:mt-36' : ''
+              className={`grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-center ${
+                idx > 0 ? 'mt-16 md:mt-20 lg:mt-24' : ''
               }`}
             >
               {/* Image Column */}
@@ -287,14 +287,14 @@ export default function HomeView({
       </section>
 
       {/* 3. Product Spotlight Catalog */}
-      <section className="py-20 bg-[#F2ECE4]/40 border-y border-[#EADCC9]/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-12">
+      <section className="py-16 md:py-20 lg:py-24 bg-[#F2ECE4]/40 border-y border-[#EADCC9]/20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8 md:space-y-12">
           
           <div className="space-y-3 max-w-2xl mx-auto">
             <span className="text-[10px] uppercase tracking-[0.3em] text-[#C5A880] font-bold">
               Nuestra Selección Privada
             </span>
-            <h2 className="text-3xl sm:text-4xl font-serif text-[#1C1917]">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif text-[#1C1917]">
               Fórmulas Destacadas
             </h2>
             <p className="text-xs sm:text-sm text-[#7D7569]">
@@ -380,8 +380,8 @@ export default function HomeView({
 
       {/* 3.5. Promotions Section */}
       {promotionBundles && promotionBundles.length > 0 && (
-        <section className="py-16 sm:py-20 bg-[#FAF8F5] border-y border-[#EADCC9]/20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8 sm:space-y-12">
+        <section className="py-16 md:py-20 lg:py-24 bg-[#FAF8F5] border-y border-[#EADCC9]/20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8 md:space-y-12">
             <div className="space-y-3 max-w-2xl mx-auto">
               <span className="text-[10px] uppercase tracking-[0.3em] text-[#C5A880] font-bold flex items-center justify-center gap-2">
                 <Gift className="w-4 h-4" />
@@ -405,7 +405,7 @@ export default function HomeView({
                   transition={{ duration: 0.6, delay: index * 0.15 }}
                   className="group flex flex-col justify-between bg-[#FAF8F5] border border-[#EADCC9]/50 overflow-hidden shadow-xs hover:shadow-md transition-all duration-300"
                 >
-                  <div className="relative aspect-4/5 overflow-hidden bg-stone-100 border-b border-[#EADCC9]/40">
+                  <div className="relative aspect-4/5 overflow-hidden bg-stone-100 border-b border-[#EADCC9]/40 min-h-[300px]">
                     {bundle.tag && (
                       <span className="absolute top-4 left-4 z-10 bg-[#FAF8F5]/90 backdrop-blur-xs text-[9px] uppercase tracking-[0.25em] text-[#C5A880] px-3 py-1 font-semibold">
                         {bundle.tag}
@@ -416,6 +416,10 @@ export default function HomeView({
                       alt={bundle.title}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                       referrerPolicy="no-referrer"
+                      loading="lazy"
+                      onError={(e) => {
+                        e.currentTarget.src = 'https://images.unsplash.com/photo-1608248597481-496100c80836?q=80&w=1000';
+                      }}
                     />
                   </div>
 
@@ -471,7 +475,7 @@ export default function HomeView({
       )}
 
       {/* 4. Interactive Skin Type Canvas Finder Quiz */}
-      <section className="py-20 bg-[#FAF8F5]">
+      <section className="py-16 md:py-20 lg:py-24 bg-[#FAF8F5]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8">
           <div className="space-y-3">
             <span className="text-[10px] uppercase tracking-[0.3em] text-[#C5A880] font-bold">
@@ -525,8 +529,8 @@ export default function HomeView({
       </section>
 
       {/* 5. Editorial Testmonial Section */}
-      <section className="py-20 md:py-28 bg-[#F2ECE4]/30 border-t border-[#EADCC9]/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+      <section className="py-16 md:py-20 lg:py-28 bg-[#F2ECE4]/30 border-t border-[#EADCC9]/20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 md:space-y-16">
           <div className="text-center space-y-3">
             <span className="text-[10px] uppercase tracking-[0.3em] text-[#C5A880] font-semibold">
               Testimonios Editoriales
@@ -536,7 +540,7 @@ export default function HomeView({
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
             {TESTIMONIALS.map((t, index) => (
               <motion.div
                 key={t.id}
