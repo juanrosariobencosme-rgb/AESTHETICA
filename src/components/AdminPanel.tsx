@@ -13,6 +13,7 @@ import { ordersApi } from '../lib/api/orders';
 import { promotionsApi } from '../lib/api/promotions';
 import { expensesApi } from '../lib/api/expenses';
 import { cashSessionApi } from '../lib/api/cashSession';
+import { socialsApi } from '../lib/api/socials';
 
 interface AdminPanelProps {
   products: Product[];
@@ -124,7 +125,7 @@ export default function AdminPanel({
     setCashHistory([...cashHistory, entry]);
     
     // Update cash session
-    if (cashSession.isOpen) {
+    if (cashSession?.isOpen) {
       if (manualCashType === 'cash') {
         setCashSession({
           ...cashSession,
@@ -454,6 +455,11 @@ export default function AdminPanel({
   };
 
   const handleCloseCashSession = async () => {
+    if (!cashSession?.id) {
+      showFeedback('No hay sesión de caja activa para cerrar', true);
+      return;
+    }
+
     const totalCashIn = cashSession.startingBalance + cashSession.salesCash;
     const expected = totalCashIn - cashSession.totalExpenses;
     const diff = closurePhysicalCash - expected;
@@ -477,7 +483,7 @@ export default function AdminPanel({
     };
 
     try {
-      await cashSessionApi.closeSession(cashSession.id!);
+      await cashSessionApi.closeSession(cashSession.id);
       setCashSession(finalSession);
       setClosurePhysicalCash(0);
       showFeedback(`Caja de venta CERRADA con éxito. Diferencia registrada: ${convertAndFormatPrice(diff, selectedCountryCode)}`);
@@ -1424,7 +1430,7 @@ export default function AdminPanel({
                     <p className="text-[10px] text-[#7D7569] mt-0.5">Gestión integral de flujo de efectivo, auditoría y control financiero diario.</p>
                   </div>
                   <div className="flex items-center gap-3 w-full sm:w-auto">
-                    {cashSession.isOpen ? (
+                    {cashSession?.isOpen ? (
                       <span className="inline-flex items-center gap-1.5 text-emerald-800 bg-emerald-50 px-3 py-1 text-[10px] font-mono font-bold uppercase rounded border border-emerald-200">
                         ● Caja Abierta
                       </span>
@@ -1433,7 +1439,7 @@ export default function AdminPanel({
                         ● Caja Cerrada
                       </span>
                     )}
-                    {!cashSession.isOpen && (
+                    {!cashSession?.isOpen && (
                       <button
                         onClick={() => setShowOpenCashForm(!showOpenCashForm)}
                         className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-[10px] uppercase font-bold tracking-widest transition-all whitespace-nowrap"
@@ -1441,7 +1447,7 @@ export default function AdminPanel({
                         + Abrir Caja
                       </button>
                     )}
-                    {cashSession.isOpen && (
+                    {cashSession?.isOpen && (
                       <button
                         onClick={() => setShowCloseCashForm(!showCloseCashForm)}
                         className="px-4 py-2 bg-rose-700 hover:bg-rose-800 text-white text-[10px] uppercase font-bold tracking-widest transition-all whitespace-nowrap"
@@ -1563,7 +1569,7 @@ export default function AdminPanel({
                   </div>
                 </div>
 
-                {!cashSession.isOpen && showOpenCashForm ? (
+                {!cashSession?.isOpen && showOpenCashForm ? (
                   /* Formulario de apertura de caja mejorado */
                   <div className="max-w-2xl mx-auto">
                     <div className="border-2 border-emerald-200 p-6 sm:p-8 bg-emerald-50/30 space-y-6">
@@ -1630,7 +1636,7 @@ export default function AdminPanel({
                   </div>
                 ) : null}
 
-                {cashSession.isOpen && (
+                {cashSession?.isOpen && (
                   /* Panel de caja abierto mejorado */
                   <div className="space-y-6">
                     {/* Resumen financiero en tiempo real */}
@@ -1721,7 +1727,7 @@ export default function AdminPanel({
                   </div>
                 )}
 
-                {cashSession.isOpen && showCloseCashForm ? (
+                {cashSession?.isOpen && showCloseCashForm ? (
                   /* Formulario de cierre de caja mejorado */
                   <div className="border-2 border-rose-200 bg-rose-50/30 p-4 sm:p-6">
                     <h4 className="font-serif text-lg sm:text-xl text-rose-900 mb-4">Cierre de Caja Chica</h4>
@@ -1837,7 +1843,15 @@ export default function AdminPanel({
                   </div>
 
                   <button 
-                    onClick={() => showFeedback('Ajustes de Redes Sociales actualizados de forma sitewide')} 
+                    onClick={async () => {
+                      try {
+                        await socialsApi.update(socials);
+                        showFeedback('Ajustes de Redes Sociales actualizados de forma sitewide');
+                      } catch (error) {
+                        console.error('Error updating social config:', error);
+                        showFeedback('Error al guardar configuración social en Supabase', true);
+                      }
+                    }}
                     className="w-full py-3 bg-[#2A2621] hover:bg-stone-800 text-white font-bold text-[10px] tracking-widest uppercase transition-colors"
                   >
                     Guardar Cambios de Configuración
