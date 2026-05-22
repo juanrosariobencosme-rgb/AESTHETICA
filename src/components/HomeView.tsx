@@ -465,7 +465,7 @@ export default function HomeView({
             </div>
 
             <button
-              onClick={() => window.location.hash = 'promotions'}
+              onClick={() => window.location.hash = '#promotions'}
               className="inline-flex py-4 px-8 sm:px-10 border border-[#2A2621] text-xs uppercase tracking-[0.2em] hover:bg-[#2A2621] hover:text-white transition-colors duration-500 font-medium"
             >
               Ver Todas las Promociones

@@ -230,7 +230,7 @@ export default function App() {
     setOrdersArr(updatedOrders);
 
     // If active cash drawer is open, record this inflow!
-    if (cashSessionState.isOpen) {
+    if (cashSessionState && cashSessionState.isOpen) {
       const isCash = mockOrder.paymentMethod === 'EFECTIVO';
       const updatedSession: CashSession = {
         ...cashSessionState,
@@ -702,7 +702,7 @@ export default function App() {
       {/* 6. Floating Persistent WhatsApp Circular Button */}
       <div className="fixed bottom-6 right-6 z-40">
         <a
-          href="https://wa.me/18294855693?text=Hola%20Aesthetica%2C%20quisiera%20hacer%20una%20consulta%20sobre%20sus%20elixires."
+          href={`https://wa.me/${socialsState.whatsAppPhone}?text=${encodeURIComponent(socialsState.whatsAppText)}`}
           target="_blank"
           rel="noopener noreferrer"
           className="w-14 h-14 bg-[#25D366] text-white rounded-full shadow-2xl hover:bg-[#20ba5a] transition-all duration-300 flex items-center justify-center transform hover:-translate-y-1 hover:scale-110 select-none"

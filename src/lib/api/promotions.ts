@@ -128,5 +128,50 @@ export const promotionsApi = {
       console.error('Error in promotionsApi.delete:', error);
       throw error;
     }
+  },
+
+  async upsert(promotions: PromotionBundle[]): Promise<PromotionBundle[]> {
+    try {
+      console.log('Upserting promotions:', promotions.length);
+      
+      const dbPromotions = promotions.map(promo => ({
+        id: promo.id,
+        title: promo.title,
+        subtitle: promo.subtitle,
+        description: promo.description,
+        product_ids: promo.productIds,
+        price: promo.price,
+        value_price: promo.valuePrice,
+        image: promo.image,
+        tag: promo.tag
+      }));
+      
+      const { data, error } = await supabase
+        .from('promotion_bundles')
+        .upsert(dbPromotions, { onConflict: 'id' })
+        .select();
+      
+      if (error) {
+        console.error('Error upserting promotions:', error);
+        throw error;
+      }
+      
+      console.log('Promotions upserted successfully');
+      
+      return data.map(promo => ({
+        id: promo.id,
+        title: promo.title,
+        subtitle: promo.subtitle,
+        description: promo.description,
+        productIds: promo.product_ids,
+        price: promo.price,
+        valuePrice: promo.value_price,
+        image: promo.image,
+        tag: promo.tag
+      })) as PromotionBundle[];
+    } catch (error) {
+      console.error('Error in promotionsApi.upsert:', error);
+      throw error;
+    }
   }
 };

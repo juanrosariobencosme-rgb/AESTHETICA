@@ -130,5 +130,56 @@ export const cashSessionApi = {
       console.error('Error in cashSessionApi.closeSession:', error);
       throw error;
     }
+  },
+
+  async update(id: string, session: Partial<CashSession>): Promise<CashSession> {
+    try {
+      console.log('Updating cash session:', id, session);
+      
+      const dbSession: any = {};
+      if (session.isOpen !== undefined) dbSession.is_open = session.isOpen;
+      if (session.openedAt !== undefined) dbSession.opened_at = session.openedAt;
+      if (session.closedAt !== undefined) dbSession.closed_at = session.closedAt;
+      if (session.startingBalance !== undefined) dbSession.starting_balance = session.startingBalance;
+      if (session.salesCash !== undefined) dbSession.sales_cash = session.salesCash;
+      if (session.salesTransfer !== undefined) dbSession.sales_transfer = session.salesTransfer;
+      if (session.totalExpenses !== undefined) dbSession.total_expenses = session.totalExpenses;
+      if (session.expectedBalance !== undefined) dbSession.expected_balance = session.expectedBalance;
+      if (session.actualBalance !== undefined) dbSession.actual_balance = session.actualBalance;
+      if (session.difference !== undefined) dbSession.difference = session.difference;
+      if (session.history !== undefined) dbSession.history = session.history;
+      
+      const { data, error } = await supabase
+        .from('cash_sessions')
+        .update(dbSession)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error updating cash session:', error);
+        throw error;
+      }
+      
+      console.log('Cash session updated successfully');
+      
+      return {
+        id: data.id,
+        isOpen: data.is_open,
+        openedAt: data.opened_at,
+        closedAt: data.closed_at,
+        startingBalance: data.starting_balance,
+        salesCash: data.sales_cash,
+        salesTransfer: data.sales_transfer,
+        totalExpenses: data.total_expenses,
+        expectedBalance: data.expected_balance,
+        actualBalance: data.actual_balance,
+        difference: data.difference,
+        history: data.history
+      } as CashSession;
+    } catch (error) {
+      console.error('Error in cashSessionApi.update:', error);
+      throw error;
+    }
   }
 };
