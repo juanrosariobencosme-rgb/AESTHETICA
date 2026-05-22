@@ -1,0 +1,6 @@
+{
+  "name": "Aesthetica Skincare",
+  "description": "Una experiencia premium de cuidado de la piel y consultor personal de rituales de belleza impulsado por inteligencia artificial.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
