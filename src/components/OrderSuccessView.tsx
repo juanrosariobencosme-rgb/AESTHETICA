@@ -8,12 +8,14 @@ interface OrderSuccessViewProps {
   orderInfo: { name: string; email: string; paymentMethod: string; finalTotal: number; items?: CartItem[] } | null;
   onReturnHome: () => void;
   selectedCountryCode?: string;
+  whatsAppPhone?: string;
 }
 
 export default function OrderSuccessView({ 
   orderInfo, 
   onReturnHome,
-  selectedCountryCode = 'MX'
+  selectedCountryCode = 'MX',
+  whatsAppPhone = '18294855693'
 }: OrderSuccessViewProps) {
   const [copied, setCopied] = useState(false);
   const [voucherFile, setVoucherFile] = useState<File | null>(null);
@@ -102,7 +104,7 @@ export default function OrderSuccessView({
     `• *Total:* ${convertAndFormatPrice(total, selectedCountryCode)}\n\n` +
     `Por favor, procedan con la entrega de mis elixires.`;
 
-  const whatsappUrl = `https://wa.me/18294855693?text=${encodeURIComponent(orderMsg)}`;
+  const whatsappUrl = `https://wa.me/${whatsAppPhone}?text=${encodeURIComponent(orderMsg)}`;
 
   return (
     <div className="bg-background min-h-screen text-on-background">

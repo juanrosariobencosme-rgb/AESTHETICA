@@ -1,8 +1,13 @@
 import { useState, FormEvent, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Mail, Phone, MapPin, Send, MessageSquare, Check } from 'lucide-react';
+import { SocialConfig } from '../types';
 
-export default function ContactView() {
+interface ContactViewProps {
+  socials?: SocialConfig;
+}
+
+export default function ContactView({ socials: propSocials }: ContactViewProps) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -10,7 +15,7 @@ export default function ContactView() {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
 
-  const [socials, setSocials] = useState({
+  const [socials, setSocials] = useState<SocialConfig>({
     whatsAppPhone: '18294855693',
     whatsAppText: 'Hola Aesthetica, quisiera hacer una consulta sobre sus elixires.',
     instagramUrl: 'https://instagram.com',
@@ -18,15 +23,19 @@ export default function ContactView() {
   });
 
   useEffect(() => {
-    const saved = localStorage.getItem('aesthetica_socials');
-    if (saved) {
-      try {
-        setSocials(JSON.parse(saved));
-      } catch (e) {
-        console.error(e);
+    if (propSocials) {
+      setSocials(propSocials);
+    } else {
+      const saved = localStorage.getItem('aesthetica_socials');
+      if (saved) {
+        try {
+          setSocials(JSON.parse(saved));
+        } catch (e) {
+          console.error(e);
+        }
       }
     }
-  }, []);
+  }, [propSocials]);
 
   const handleSendMessage = (e: FormEvent) => {
     e.preventDefault();

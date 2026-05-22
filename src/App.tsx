@@ -331,7 +331,7 @@ export default function App() {
               />
             )}
 
-            {activeTab === 'contact' && <ContactView />}
+            {activeTab === 'contact' && <ContactView socials={socialsState} />}
 
             {activeTab === 'admin' && (
               !adminLoggedIn ? (
@@ -425,6 +425,7 @@ export default function App() {
                   setActiveTab('home');
                 }}
                 selectedCountryCode={selectedCountryCode}
+                whatsAppPhone={socialsState.whatsAppPhone}
               />
             )}
           </motion.div>
