@@ -1,13 +1,18 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, FormEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   TrendingUp, Plus, Trash2, Edit3, Save, Download, Search, Settings, 
   DollarSign, Users, ShoppingBag, Tag, Calculator, FileText, X, Check, 
   CheckCircle2, Lock, Unlock, Calendar, ArrowDownRight, ArrowUpRight, 
-  Activity, Info, AlertTriangle, Printer, HelpCircle 
+  Info, AlertTriangle, Printer, HelpCircle 
 } from 'lucide-react';
 import { Product, Order, Expense, CashSession, PromotionBundle, SocialConfig } from '../types';
 import { convertAndFormatPrice } from '../utils/currency';
+import { productsApi } from '../lib/api/products';
+import { ordersApi } from '../lib/api/orders';
+import { promotionsApi } from '../lib/api/promotions';
+import { expensesApi } from '../lib/api/expenses';
+import { cashSessionApi } from '../lib/api/cashSession';
 
 interface AdminPanelProps {
   products: Product[];
@@ -243,7 +248,7 @@ export default function AdminPanel({
   };
 
   // --- Product Management Actions ---
-  const handleCreateProduct = (e: React.FormEvent) => {
+  const handleCreateProduct = async (e: FormEvent) => {
     e.preventDefault();
     if (!newProdName || !newProdSubtitle || newProdPrice <= 0) {
       showFeedback('Por favor introduce datos válidos para el producto', true);
@@ -266,41 +271,58 @@ export default function AdminPanel({
       texture: newProdTexture
     };
 
-    // Append to dynamic products array
-    const updated = [...products, newProd];
-    setProducts(updated);
-    
-    // Clear forms
-    setNewProdName('');
-    setNewProdSubtitle('');
-    setNewProdDesc('');
-    setNewProdPrice(100);
-    setNewProdIngredients('Saffron Peptides, Pure Squalane');
-    setNewProdBenefits('Increases natural collagen, Infuses deep moisture');
-    setCreatingProduct(false);
-    showFeedback(`Elixir "${newProd.name}" creado e insertado al catálogo.`);
+    try {
+      await productsApi.create(newProd);
+      const updated = [...products, newProd];
+      setProducts(updated);
+      
+      // Clear forms
+      setNewProdName('');
+      setNewProdSubtitle('');
+      setNewProdDesc('');
+      setNewProdPrice(100);
+      setNewProdIngredients('Saffron Peptides, Pure Squalane');
+      setNewProdBenefits('Increases natural collagen, Infuses deep moisture');
+      setCreatingProduct(false);
+      showFeedback(`Elixir "${newProd.name}" creado e insertado al catálogo.`);
+    } catch (error) {
+      console.error('Error creating product:', error);
+      showFeedback('Error al crear producto en Supabase', true);
+    }
   };
 
-  const handleUpdateProductStockAndPrice = (id: string, updatedPrice: number, updatedTexture: string) => {
-    const updated = products.map(p => {
-      if (p.id === id) {
-        return {
-          ...p,
-          price: Number(updatedPrice),
-          texture: updatedTexture
-        };
-      }
-      return p;
-    });
-    setProducts(updated);
-    setEditingProduct(null);
-    showFeedback('Datos del producto actualizados correctamente.');
+  const handleUpdateProductStockAndPrice = async (id: string, updatedPrice: number, updatedTexture: string) => {
+    try {
+      await productsApi.update(id, { price: Number(updatedPrice), texture: updatedTexture });
+      const updated = products.map(p => {
+        if (p.id === id) {
+          return {
+            ...p,
+            price: Number(updatedPrice),
+            texture: updatedTexture
+          };
+        }
+        return p;
+      });
+      setProducts(updated);
+      setEditingProduct(null);
+      showFeedback('Datos del producto actualizados correctamente.');
+    } catch (error) {
+      console.error('Error updating product:', error);
+      showFeedback('Error al actualizar producto en Supabase', true);
+    }
   };
 
-  const handleDeleteProduct = (id: string) => {
+  const handleDeleteProduct = async (id: string) => {
     if (confirm('¿Estás seguro de eliminar este elixir del catálogo permanentemente? Esto modificará las promociones secundarias.')) {
-      setProducts(products.filter(p => p.id !== id));
-      showFeedback('Elixir eliminado del catálogo.');
+      try {
+        await productsApi.delete(id);
+        setProducts(products.filter(p => p.id !== id));
+        showFeedback('Elixir eliminado del catálogo.');
+      } catch (error) {
+        console.error('Error deleting product:', error);
+        showFeedback('Error al eliminar producto en Supabase', true);
+      }
     }
   };
 
@@ -311,7 +333,7 @@ export default function AdminPanel({
     );
   };
 
-  const handleCreatePromotion = (e: React.FormEvent) => {
+  const handleCreatePromotion = async (e: FormEvent) => {
     e.preventDefault();
     if (!newPromoTitle || newPromoPrice <= 0 || newPromoProdIds.length === 0) {
       showFeedback('Por favor introduce un título, precio y al menos un producto asociado', true);
@@ -330,24 +352,36 @@ export default function AdminPanel({
       tag: newPromoTag
     };
 
-    setPromotions([...promotions, newBundle]);
-    setNewPromoTitle('');
-    setNewPromoSubtitle('');
-    setNewPromoDesc('');
-    setNewPromoProdIds([]);
-    setCreatingPromo(false);
-    showFeedback(`Promoción "${newBundle.title}" ha sido publicada en la página principal.`);
+    try {
+      await promotionsApi.create(newBundle);
+      setPromotions([...promotions, newBundle]);
+      setNewPromoTitle('');
+      setNewPromoSubtitle('');
+      setNewPromoDesc('');
+      setNewPromoProdIds([]);
+      setCreatingPromo(false);
+      showFeedback(`Promoción "${newBundle.title}" ha sido publicada en la página principal.`);
+    } catch (error) {
+      console.error('Error creating promotion:', error);
+      showFeedback('Error al crear promoción en Supabase', true);
+    }
   };
 
-  const handleDeletePromotion = (id: string) => {
+  const handleDeletePromotion = async (id: string) => {
     if (confirm('¿Eliminar esta promoción permanentemente?')) {
-      setPromotions(promotions.filter(p => p.id !== id));
-      showFeedback('Promoción retirada.');
+      try {
+        await promotionsApi.delete(id);
+        setPromotions(promotions.filter(p => p.id !== id));
+        showFeedback('Promoción retirada.');
+      } catch (error) {
+        console.error('Error deleting promotion:', error);
+        showFeedback('Error al eliminar promoción en Supabase', true);
+      }
     }
   };
 
   // --- Expenses Actions ---
-  const handleAddExpense = (e: React.FormEvent) => {
+  const handleAddExpense = async (e: FormEvent) => {
     e.preventDefault();
     if (!expenseTitle || expenseAmount <= 0) {
       showFeedback('Por favor ingresa un título y monto de egreso válido', true);
@@ -363,22 +397,34 @@ export default function AdminPanel({
       notes: expenseNotes
     };
 
-    setExpenses([newExp, ...expenses]);
-    setExpenseTitle('');
-    setExpenseAmount(0);
-    setExpenseNotes('');
-    showFeedback('Egreso registrado correctamente.');
+    try {
+      await expensesApi.create(newExp);
+      setExpenses([newExp, ...expenses]);
+      setExpenseTitle('');
+      setExpenseAmount(0);
+      setExpenseNotes('');
+      showFeedback('Egreso registrado correctamente.');
+    } catch (error) {
+      console.error('Error creating expense:', error);
+      showFeedback('Error al registrar egreso en Supabase', true);
+    }
   };
 
-  const handleDeleteExpense = (id: string) => {
+  const handleDeleteExpense = async (id: string) => {
     if (confirm('¿Eliminar este egreso registrado?')) {
-      setExpenses(expenses.filter(e => e.id !== id));
-      showFeedback('Egreso eliminado.');
+      try {
+        await expensesApi.delete(id);
+        setExpenses(expenses.filter(e => e.id !== id));
+        showFeedback('Egreso eliminado.');
+      } catch (error) {
+        console.error('Error deleting expense:', error);
+        showFeedback('Error al eliminar egreso en Supabase', true);
+      }
     }
   };
 
   // --- Cashier session control ---
-  const handleOpenCashSession = (starting: number) => {
+  const handleOpenCashSession = async (starting: number) => {
     const updated: CashSession = {
       isOpen: true,
       openedAt: new Date().toISOString(),
@@ -397,11 +443,17 @@ export default function AdminPanel({
         }
       ]
     };
-    setCashSession(updated);
-    showFeedback('Caja Abierta y habilitada para recibir ingresos.');
+    try {
+      const created = await cashSessionApi.create(updated);
+      setCashSession(created);
+      showFeedback('Caja Abierta y habilitada para recibir ingresos.');
+    } catch (error) {
+      console.error('Error opening cash session:', error);
+      showFeedback('Error al abrir sesión de caja en Supabase', true);
+    }
   };
 
-  const handleCloseCashSession = () => {
+  const handleCloseCashSession = async () => {
     const totalCashIn = cashSession.startingBalance + cashSession.salesCash;
     const expected = totalCashIn - cashSession.totalExpenses;
     const diff = closurePhysicalCash - expected;
@@ -424,60 +476,17 @@ export default function AdminPanel({
       ]
     };
 
-    setCashSession(finalSession);
-    setClosurePhysicalCash(0);
-    showFeedback(`Caja de venta CERRADA con éxito. Diferencia registrada: ${convertAndFormatPrice(diff, selectedCountryCode)}`);
-  };
-
-  // Simulated Manual Order creation inside Admin
-  const handleSimulateSale = () => {
-    if (products.length === 0) return;
-    const randomProduct = products[Math.floor(Math.random() * products.length)];
-    const qty = Math.floor(Math.random() * 2) + 1;
-    const cashMethod = Math.random() > 0.4 ? 'EFECTIVO' : 'TRANSFERENCIA';
-    const sub = randomProduct.price * qty;
-    const sh = 15;
-    const tx = sub * 0.16;
-    const tot = sub + sh + tx;
-
-    const mockOrder: Order = {
-      id: `FAC-${Math.floor(Math.random() * 90000) + 10000}`,
-      customerName: ['Sebastián Peña', 'Victoria Mendoza', 'Araceli Cárdenas', 'Roberto Lira'][Math.floor(Math.random() * 4)],
-      customerEmail: 'cliente.simulado@aesthetica.com',
-      paymentMethod: cashMethod,
-      items: [{ product: randomProduct, quantity: qty }],
-      subtotal: sub,
-      tax: tx,
-      shipping: sh,
-      total: tot,
-      date: new Date().toISOString(),
-      status: 'DEPOSITADO',
-      notes: 'Venta simulada para control de auditoría administrativa'
-    };
-
-    setOrders([mockOrder, ...orders]);
-
-    // If cashier is open, update balance
-    if (cashSession.isOpen) {
-      setCashSession({
-        ...cashSession,
-        salesCash: cashSession.salesCash + (cashMethod === 'EFECTIVO' ? tot : 0),
-        salesTransfer: cashSession.salesTransfer + (cashMethod === 'TRANSFERENCIA' ? tot : 0),
-        expectedBalance: cashSession.expectedBalance + (cashMethod === 'EFECTIVO' ? tot : 0),
-        history: [
-          ...(cashSession.history || []),
-          {
-            date: new Date().toISOString(),
-            action: `Venta Directa (${cashMethod})`,
-            amount: tot,
-            notes: `Orden ${mockOrder.id} integrada`
-          }
-        ]
-      });
+    try {
+      await cashSessionApi.closeSession(cashSession.id!);
+      setCashSession(finalSession);
+      setClosurePhysicalCash(0);
+      showFeedback(`Caja de venta CERRADA con éxito. Diferencia registrada: ${convertAndFormatPrice(diff, selectedCountryCode)}`);
+    } catch (error) {
+      console.error('Error closing cash session:', error);
+      showFeedback('Error al cerrar sesión de caja en Supabase', true);
     }
-
-    showFeedback(`Compra simulada e ingresos integrados: ${mockOrder.id}`);
   };
+
 
   // Dynamic lists with search selectors
   const filteredProducts = products.filter(p => 
@@ -541,13 +550,6 @@ export default function AdminPanel({
             </h1>
           </div>
           <div className="flex flex-wrap gap-2.5">
-            <button
-              onClick={handleSimulateSale}
-              className="px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-none text-xs font-semibold tracking-wider uppercase transition-colors flex items-center gap-1.5"
-            >
-              <Activity className="w-4 h-4" />
-              Simular Compra de Cliente
-            </button>
             <div className="flex items-center gap-1.5 text-xs font-mono text-[#7D7569] bg-stone-100 px-3 py-2 border border-stone-200">
               <Lock className="w-3.5 h-3.5 text-emerald-600" />
               <span>Modo Root Conectado</span>

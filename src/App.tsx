@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Star, X, ShoppingBag, Sparkles, Check, Heart, Shield, Award, HelpCircle, MessageSquare, Lock, Key, Eye, MessageCircle, Instagram, Facebook } from 'lucide-react';
 
@@ -16,6 +16,12 @@ import CartSidebar from './components/CartSidebar';
 import AboutView from './components/AboutView';
 import AdminPanel from './components/AdminPanel';
 import { convertAndFormatPrice } from './utils/currency';
+import { productsApi } from './lib/api/products';
+import { ordersApi } from './lib/api/orders';
+import { promotionsApi } from './lib/api/promotions';
+import { expensesApi } from './lib/api/expenses';
+import { cashSessionApi } from './lib/api/cashSession';
+import { socialsApi } from './lib/api/socials';
 
 const DEFAULT_PROMOTIONS: PromotionBundle[] = [
   {
@@ -151,83 +157,92 @@ export default function App() {
   const [orderSuccessInfo, setOrderSuccessInfo] = useState<{ name: string; email: string; paymentMethod: string; finalTotal: number; items?: CartItem[] } | null>(null);
 
   // Dynamic collections & databases state
-  const [productsArr, setProductsArr] = useState<Product[]>(() => {
-    const local = localStorage.getItem('aesthetica_inventory_v1');
-    if (local) {
-      try { return JSON.parse(local); } catch { }
-    }
-    return PRODUCTS;
-  });
+  const [productsArr, setProductsArr] = useState<Product[]>(PRODUCTS);
+  const [promotionsArr, setPromotionsArr] = useState<PromotionBundle[]>(DEFAULT_PROMOTIONS);
+  const [ordersArr, setOrdersArr] = useState<Order[]>(DEFAULT_ORDERS);
+  const [expensesArr, setExpensesArr] = useState<Expense[]>(DEFAULT_EXPENSES);
+  const [cashSessionState, setCashSessionState] = useState<CashSession>(DEFAULT_SESSION);
+  const [socialsState, setSocialsState] = useState<SocialConfig>(DEFAULT_SOCIALS);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
-  const [promotionsArr, setPromotionsArr] = useState<PromotionBundle[]>(() => {
-    const local = localStorage.getItem('aesthetica_promotions_v1');
-    if (local) {
-      try { return JSON.parse(local); } catch { }
-    }
-    return DEFAULT_PROMOTIONS;
-  });
+  // Load data from Supabase on mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [products, promotions, orders, expenses, cashSession, socials] = await Promise.all([
+          productsApi.getAll().catch(() => PRODUCTS),
+          promotionsApi.getAll().catch(() => DEFAULT_PROMOTIONS),
+          ordersApi.getAll().catch(() => DEFAULT_ORDERS),
+          expensesApi.getAll().catch(() => DEFAULT_EXPENSES),
+          cashSessionApi.getCurrent().catch(() => DEFAULT_SESSION),
+          socialsApi.get().catch(() => DEFAULT_SOCIALS)
+        ]);
 
-  const [ordersArr, setOrdersArr] = useState<Order[]>(() => {
-    const local = localStorage.getItem('aesthetica_orders_v1');
-    if (local) {
-      try { return JSON.parse(local); } catch { }
-    }
-    return DEFAULT_ORDERS;
-  });
+        setProductsArr(products);
+        setPromotionsArr(promotions);
+        setOrdersArr(orders);
+        setExpensesArr(expenses);
+        if (cashSession) setCashSessionState(cashSession);
+        if (socials) setSocialsState(socials);
+        setDataLoaded(true);
+      } catch (error) {
+        console.error('Error loading data from Supabase:', error);
+        setDataLoaded(true);
+      }
+    };
 
-  const [expensesArr, setExpensesArr] = useState<Expense[]>(() => {
-    const local = localStorage.getItem('aesthetica_expenses_v1');
-    if (local) {
-      try { return JSON.parse(local); } catch { }
-    }
-    return DEFAULT_EXPENSES;
-  });
+    loadData();
+  }, []);
 
-  const [cashSessionState, setCashSessionState] = useState<CashSession>(() => {
-    const local = localStorage.getItem('aesthetica_cashsession_v1');
-    if (local) {
-      try { return JSON.parse(local); } catch { }
-    }
-    return DEFAULT_SESSION;
-  });
-
-  const [socialsState, setSocialsState] = useState<SocialConfig>(() => {
-    const local = localStorage.getItem('aesthetica_socials');
-    if (local) {
-      try { return JSON.parse(local); } catch { }
-    }
-    return DEFAULT_SOCIALS;
-  });
-
-  // State state persist triggers
-  const setProductsWithSync = (p: Product[]) => {
+  // State persist triggers with Supabase
+  const setProductsWithSync = async (p: Product[]) => {
     setProductsArr(p);
-    localStorage.setItem('aesthetica_inventory_v1', JSON.stringify(p));
+    try {
+      await productsApi.upsert(p);
+    } catch (error) {
+      console.error('Error syncing products to Supabase:', error);
+    }
   };
 
-  const setPromotionsWithSync = (pm: PromotionBundle[]) => {
+  const setPromotionsWithSync = async (pm: PromotionBundle[]) => {
     setPromotionsArr(pm);
-    localStorage.setItem('aesthetica_promotions_v1', JSON.stringify(pm));
+    try {
+      await promotionsApi.upsert(pm);
+    } catch (error) {
+      console.error('Error syncing promotions to Supabase:', error);
+    }
   };
 
-  const setOrdersWithSync = (o: Order[]) => {
+  const setOrdersWithSync = async (o: Order[]) => {
     setOrdersArr(o);
-    localStorage.setItem('aesthetica_orders_v1', JSON.stringify(o));
+    // Orders are created individually, not bulk synced
   };
 
-  const setExpensesWithSync = (e: Expense[]) => {
+  const setExpensesWithSync = async (e: Expense[]) => {
     setExpensesArr(e);
-    localStorage.setItem('aesthetica_expenses_v1', JSON.stringify(e));
+    // Expenses are created individually, not bulk synced
   };
 
-  const setCashSessionWithSync = (cs: CashSession) => {
+  const setCashSessionWithSync = async (cs: CashSession) => {
     setCashSessionState(cs);
-    localStorage.setItem('aesthetica_cashsession_v1', JSON.stringify(cs));
+    try {
+      if (cs.id) {
+        await cashSessionApi.update(cs.id, cs);
+      } else {
+        await cashSessionApi.create(cs);
+      }
+    } catch (error) {
+      console.error('Error syncing cash session to Supabase:', error);
+    }
   };
 
-  const setSocialsWithSync = (sc: SocialConfig) => {
+  const setSocialsWithSync = async (sc: SocialConfig) => {
     setSocialsState(sc);
-    localStorage.setItem('aesthetica_socials', JSON.stringify(sc));
+    try {
+      await socialsApi.update(sc);
+    } catch (error) {
+      console.error('Error syncing social config to Supabase:', error);
+    }
   };
 
   // Admin authentication simulation fields
@@ -235,7 +250,7 @@ export default function App() {
   const [adminLoggedIn, setAdminLoggedIn] = useState(false);
   const [adminError, setAdminError] = useState('');
 
-  const handleAdminLogin = (e: React.FormEvent) => {
+  const handleAdminLogin = (e: FormEvent) => {
     e.preventDefault();
     if (adminPass === 'admin' || adminPass === '1234' || adminPass.toLowerCase() === 'admin22') {
       setAdminLoggedIn(true);
@@ -297,7 +312,7 @@ export default function App() {
     setCart((prev) => prev.filter((item) => item.product.id !== productId));
   };
 
-  const handleOrderComplete = (orderData: { name: string; email: string; paymentMethod: string; finalTotal: number; items: CartItem[] }) => {
+  const handleOrderComplete = async (orderData: { name: string; email: string; paymentMethod: string; finalTotal: number; items: CartItem[] }) => {
     // Generate a beautiful, fully-functional invoice/order record
     const sub = orderData.items.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
     const mockOrder: Order = {
@@ -315,9 +330,16 @@ export default function App() {
       notes: 'Orden de preventa registrada de manera automática por el cliente en el checkout'
     };
 
-    // Update in-memory orders and persist to dynamic localStorage
+    // Save order to Supabase
+    try {
+      await ordersApi.create(mockOrder);
+    } catch (error) {
+      console.error('Error saving order to Supabase:', error);
+    }
+
+    // Update in-memory orders
     const updatedOrders = [mockOrder, ...ordersArr];
-    setOrdersWithSync(updatedOrders);
+    setOrdersArr(updatedOrders);
 
     // If active cash drawer is open, record this inflow!
     if (cashSessionState.isOpen) {
@@ -337,7 +359,7 @@ export default function App() {
           }
         ]
       };
-      setCashSessionWithSync(updatedSession);
+      await setCashSessionWithSync(updatedSession);
     }
 
     setOrderSuccessInfo(orderData);

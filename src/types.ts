@@ -115,6 +115,7 @@ export interface Expense {
 }
 
 export interface CashSession {
+  id?: string;
   isOpen: boolean;
   openedAt: string;
   closedAt: string | null;
