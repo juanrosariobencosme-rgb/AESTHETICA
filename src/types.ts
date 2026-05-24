@@ -4,14 +4,21 @@ export interface Product {
   subtitle: string;
   description: string;
   price: number;
+  salePrice?: number;
   size: string;
   ingredients: string[];
   benefits: string[];
   usage: string;
   image: string;
-  concern: 'radiance' | 'sculpt' | 'hydration' | 'calm';
+  concern: 'radiance' | 'sculpt' | 'hydration' | 'calm' | 'balance';
   rating: number;
   texture: string;
+  category?: string;
+  active?: boolean;
+  stock?: number;
+  promotionTag?: string;
+  skinTypes?: SkinType[];
+  isOffer?: boolean;
 }
 
 export interface CartItem {
@@ -36,11 +43,15 @@ export interface Testimonial {
 }
 
 export enum SkinType {
-  DRY = "DRY",
-  OILY = "OILY",
-  COMBINATION = "COMBINATION",
-  SENSITIVE = "SENSITIVE",
-  NORMAL = "NORMAL"
+  NORMAL = 'NORMAL',
+  SECA = 'SECA',
+  GRASA = 'GRASA',
+  MIXTA = 'MIXTA',
+  SENSIBLE = 'SENSIBLE',
+  ACNEICA = 'ACNEICA',
+  MADURA = 'MADURA',
+  DESHIDRATADA = 'DESHIDRATADA',
+  REACTIVA = 'REACTIVA'
 }
 
 export enum SkinConcern {
@@ -85,6 +96,50 @@ export interface PromotionBundle {
   valuePrice?: number;
   image: string;
   tag?: string;
+  active?: boolean;
+  category?: string;
+}
+
+export interface Combo {
+  id: string;
+  title: string;
+  subtitle?: string;
+  description: string;
+  productIds: string[];
+  price: number;
+  valuePrice?: number;
+  image: string;
+  tag?: string;
+  active?: boolean;
+}
+
+export interface CarouselBanner {
+  id: string;
+  image: string;
+  title: string;
+  description: string;
+  buttonText?: string;
+  buttonUrl?: string;
+  relatedProductId?: string;
+  active?: boolean;
+  priority?: number;
+  category?: string;
+}
+
+export interface ShippingSettings {
+  id?: string;
+  districtRate: number;
+  outsideRate: number;
+  districtKeywords: string[];
+}
+
+export interface BankAccount {
+  id?: string;
+  bankType: string;
+  beneficiary: string;
+  accountNumber: string;
+  clabe?: string;
+  active?: boolean;
 }
 
 export interface Order {
@@ -100,6 +155,8 @@ export interface Order {
   tax: number;
   shipping: number;
   total: number;
+  shippingZone?: string;
+  voucherFileName?: string;
   date: string; // ISO String
   status: 'PENDIENTE' | 'DEPOSITADO' | 'COMPLETADO' | 'ENVIADO';
   notes?: string;

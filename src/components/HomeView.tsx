@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowRight, Sparkles, ShieldCheck, Heart, Leaf, Star, ChevronLeft, ChevronRight, Gift } from 'lucide-react';
 import { PRODUCTS, EDITORIALS, TESTIMONIALS } from '../data';
-import { Product, PromotionBundle } from '../types';
+import { Product, PromotionBundle, CarouselBanner } from '../types';
 import { convertAndFormatPrice } from '../utils/currency';
 
 interface HomeViewProps {
@@ -11,6 +11,7 @@ interface HomeViewProps {
   selectedCountryCode?: string;
   products?: Product[];
   promotionBundles?: PromotionBundle[];
+  carouselBanners?: CarouselBanner[];
   onAddBundleToCart?: (products: Product[], customName: string, customPrice: number) => void;
 }
 
@@ -20,6 +21,7 @@ export default function HomeView({
   selectedCountryCode = 'MX',
   products = PRODUCTS,
   promotionBundles = [],
+  carouselBanners = [],
   onAddBundleToCart
 }: HomeViewProps) {
   // Highlight three products on home screen
@@ -77,32 +79,60 @@ export default function HomeView({
     return badges[productName] || 'Exclusivo';
   };
 
-  // Carousel Items definition - only use products from actual inventory
-  const CAROUSEL_ITEMS = products.slice(0, 4).map((product, index) => ({
-    product: product,
-    quote: getProductQuote(product.name),
+  type HomeCarouselItem = {
+    id: string;
+    image: string;
+    title: string;
+    description: string;
+    buttonText?: string;
+    buttonUrl?: string;
+    product?: Product;
+    badge?: string;
+    quote?: string;
+  };
+
+  const defaultCarouselItems: HomeCarouselItem[] = products.slice(0, 4).map((product, index) => ({
+    id: `default-${index}`,
+    image: product.image,
+    title: product.name,
+    description: getProductQuote(product.name),
+    buttonText: 'Ver Detalles',
+    buttonUrl: '#catalog',
+    product,
     badge: getProductBadge(product.name),
-    image: product.image
+    quote: getProductQuote(product.name)
   }));
+
+  const homeCarouselItems: HomeCarouselItem[] = carouselBanners.length > 0
+    ? carouselBanners.map((banner) => ({
+        id: banner.id,
+        image: banner.image,
+        title: banner.title,
+        description: banner.description,
+        buttonText: banner.buttonText,
+        buttonUrl: banner.buttonUrl,
+        product: banner.relatedProductId ? products.find((p) => p.id === banner.relatedProductId) : undefined
+      }))
+    : defaultCarouselItems;
 
   const [carouselIndex, setCarouselIndex] = useState(0);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCarouselIndex((prev) => (prev + 1) % CAROUSEL_ITEMS.length);
+      setCarouselIndex((prev) => (prev + 1) % homeCarouselItems.length);
     }, 6000);
     return () => clearInterval(timer);
-  }, [CAROUSEL_ITEMS.length]);
+  }, [homeCarouselItems.length]);
 
   const handlePrev = () => {
-    setCarouselIndex((prev) => (prev - 1 + CAROUSEL_ITEMS.length) % CAROUSEL_ITEMS.length);
+    setCarouselIndex((prev) => (prev - 1 + homeCarouselItems.length) % homeCarouselItems.length);
   };
 
   const handleNext = () => {
-    setCarouselIndex((prev) => (prev + 1) % CAROUSEL_ITEMS.length);
+    setCarouselIndex((prev) => (prev + 1) % homeCarouselItems.length);
   };
 
-  const activeCarousel = CAROUSEL_ITEMS[carouselIndex];
+  const activeCarousel = homeCarouselItems[carouselIndex];
 
   return (
     <div className="bg-[#FAF8F5] text-[#2A2621]">
@@ -178,7 +208,7 @@ export default function HomeView({
             </div>
 
             {/* Right Column: Luxury Product Carousel with Floating Card */}
-            {CAROUSEL_ITEMS.length > 0 && (
+            {homeCarouselItems.length > 0 && (
               <div className="lg:col-span-5 relative flex flex-col items-center justify-center">
                 <div className="relative w-full max-w-sm sm:max-w-md aspect-3/4 rounded-t-full overflow-hidden border border-[#EADCC9]/40 shadow-xl">
                   
@@ -186,7 +216,7 @@ export default function HomeView({
                     <motion.img
                       key={carouselIndex}
                       src={activeCarousel.image}
-                      alt={activeCarousel.product.name}
+                      alt={activeCarousel.product?.name ?? activeCarousel.title}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
@@ -219,7 +249,7 @@ export default function HomeView({
 
                   {/* Little Page Indicator Dots */}
                   <div className="absolute top-4 right-6 flex space-x-1.5 z-20">
-                    {CAROUSEL_ITEMS.map((_, dotIdx) => (
+                    {homeCarouselItems.map((_, dotIdx) => (
                       <button
                         key={dotIdx}
                         onClick={() => setCarouselIndex(dotIdx)}
@@ -242,16 +272,16 @@ export default function HomeView({
                     className="absolute bottom-4 -left-4 sm:left-4 bg-[#FAF8F5]/95 backdrop-blur-md p-6 max-w-[260px] border border-[#EADCC9] shadow-lg text-left z-10"
                   >
                     <p className="font-serif italic text-sm text-[#C5A880]">{activeCarousel.badge}</p>
-                    <h3 className="font-serif tracking-widest text-[#2A2621] uppercase text-base mt-1">{activeCarousel.product.name}</h3>
+                    <h3 className="font-serif tracking-widest text-[#2A2621] uppercase text-base mt-1">{activeCarousel.product?.name ?? activeCarousel.title}</h3>
                     <p className="text-xs text-[#7D7569] mt-2 leading-relaxed h-[60px] overflow-hidden">
-                      {activeCarousel.quote}
+                      {activeCarousel.quote ?? activeCarousel.description}
                     </p>
                     <div className="mt-3 flex items-center justify-between">
                       <span className="font-mono text-xs font-semibold text-[#1C1917]">
-                        {convertAndFormatPrice(activeCarousel.product.price, selectedCountryCode)}
+                        {convertAndFormatPrice(activeCarousel.product?.price ?? 0, selectedCountryCode)}
                       </span>
                       <button
-                        onClick={() => onViewProductDetails(activeCarousel.product)}
+                        onClick={() => activeCarousel.product && onViewProductDetails(activeCarousel.product)}
                         className="text-[10px] uppercase tracking-widest text-[#2A2621] font-bold border-b border-[#C5A880] hover:text-[#C5A880] transition-colors cursor-pointer"
                       >
                         Ver Detalles

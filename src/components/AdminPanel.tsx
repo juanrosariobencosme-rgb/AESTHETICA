@@ -6,7 +6,7 @@ import {
   CheckCircle2, Lock, Unlock, Calendar, ArrowDownRight, ArrowUpRight, 
   Info, AlertTriangle, Printer, HelpCircle 
 } from 'lucide-react';
-import { Product, Order, Expense, CashSession, PromotionBundle, SocialConfig } from '../types';
+import { Product, Order, Expense, CashSession, PromotionBundle, SocialConfig, Combo, CarouselBanner, ShippingSettings, BankAccount } from '../types';
 import { convertAndFormatPrice } from '../utils/currency';
 import { productsApi } from '../lib/api/products';
 import { ordersApi } from '../lib/api/orders';
@@ -20,6 +20,14 @@ interface AdminPanelProps {
   setProducts: (products: Product[]) => void;
   promotions: PromotionBundle[];
   setPromotions: (promotions: PromotionBundle[]) => void;
+  combos: Combo[];
+  setCombos: (combos: Combo[]) => void;
+  carousel: CarouselBanner[];
+  setCarousel: (banners: CarouselBanner[]) => void;
+  shippingSettings: ShippingSettings;
+  setShippingSettings: (settings: ShippingSettings) => void;
+  bankAccount: BankAccount;
+  setBankAccount: (account: BankAccount) => void;
   orders: Order[];
   setOrders: (orders: Order[]) => void;
   expenses: Expense[];
@@ -36,6 +44,14 @@ export default function AdminPanel({
   setProducts,
   promotions,
   setPromotions,
+  combos,
+  setCombos,
+  carousel,
+  setCarousel,
+  shippingSettings,
+  setShippingSettings,
+  bankAccount,
+  setBankAccount,
   orders,
   setOrders,
   expenses,

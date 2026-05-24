@@ -4,11 +4,10 @@ import { Star, X, ShoppingBag, Sparkles, Check, Heart, Shield, Award, HelpCircle
 
 // Data & Components imports
 import { PRODUCTS } from './data';
-import { Product, CartItem, PromotionBundle, Order, Expense, CashSession, SocialConfig } from './types';
+import { Product, CartItem, PromotionBundle, Combo, CarouselBanner, Order, Expense, CashSession, SocialConfig, ShippingSettings, BankAccount } from './types';
 import Header from './components/Header';
 import HomeView from './components/HomeView';
 import CatalogView from './components/CatalogView';
-import PromotionsView from './components/PromotionsView';
 import ContactView from './components/ContactView';
 import CheckoutView from './components/CheckoutView';
 import OrderSuccessView from './components/OrderSuccessView';
@@ -19,13 +18,33 @@ import { convertAndFormatPrice } from './utils/currency';
 import { productsApi } from './lib/api/products';
 import { ordersApi } from './lib/api/orders';
 import { promotionsApi } from './lib/api/promotions';
+import { combosApi } from './lib/api/combos';
+import { carouselApi } from './lib/api/carousel';
+import { shippingApi } from './lib/api/shipping';
+import { bankAccountsApi } from './lib/api/bankAccounts';
 import { expensesApi } from './lib/api/expenses';
 import { cashSessionApi } from './lib/api/cashSession';
 import { socialsApi } from './lib/api/socials';
 
 const DEFAULT_PROMOTIONS: PromotionBundle[] = [];
+const DEFAULT_COMBOS: Combo[] = [];
+const DEFAULT_CAROUSEL: CarouselBanner[] = [];
 const DEFAULT_ORDERS: Order[] = [];
 const DEFAULT_EXPENSES: Expense[] = [];
+const DEFAULT_SHIPPING: ShippingSettings = {
+  id: 'default',
+  districtRate: 200,
+  outsideRate: 350,
+  districtKeywords: ['Distrito', 'Santo Domingo', 'Zona', 'Colonia']
+};
+const DEFAULT_BANK_ACCOUNT: BankAccount = {
+  id: 'default',
+  bankType: 'Banco Premium',
+  beneficiary: 'Aesthetica Rituals S.A. de C.V.',
+  accountNumber: '012345678901234567',
+  clabe: '012 345 6789 0123 4567',
+  active: true
+};
 const DEFAULT_SESSION: CashSession | null = null;
 const DEFAULT_SOCIALS: SocialConfig = {
   whatsAppPhone: '18294855693',
@@ -42,14 +61,28 @@ export default function App() {
   const [selectedCountryCode, setSelectedCountryCode] = useState<string>('MX');
   
   // Checkout & Order completion context
-  const [orderSuccessInfo, setOrderSuccessInfo] = useState<{ name: string; email: string; paymentMethod: string; finalTotal: number; items?: CartItem[] } | null>(null);
+  const [orderSuccessInfo, setOrderSuccessInfo] = useState<{
+    name: string;
+    email: string;
+    paymentMethod: string;
+    finalTotal: number;
+    tax: number;
+    shippingCost: number;
+    shippingZone: string;
+    voucherFileName?: string;
+    items?: CartItem[];
+  } | null>(null);
 
   // Dynamic collections & databases state
   const [productsArr, setProductsArr] = useState<Product[]>(PRODUCTS);
   const [promotionsArr, setPromotionsArr] = useState<PromotionBundle[]>(DEFAULT_PROMOTIONS);
+  const [combosArr, setCombosArr] = useState<Combo[]>(DEFAULT_COMBOS);
+  const [carouselArr, setCarouselArr] = useState<CarouselBanner[]>(DEFAULT_CAROUSEL);
   const [ordersArr, setOrdersArr] = useState<Order[]>(DEFAULT_ORDERS);
   const [expensesArr, setExpensesArr] = useState<Expense[]>(DEFAULT_EXPENSES);
-  const [cashSessionState, setCashSessionState] = useState<CashSession>(DEFAULT_SESSION);
+  const [shippingSettings, setShippingSettings] = useState<ShippingSettings>(DEFAULT_SHIPPING);
+  const [bankAccount, setBankAccount] = useState<BankAccount>(DEFAULT_BANK_ACCOUNT);
+  const [cashSessionState, setCashSessionState] = useState<CashSession | null>(DEFAULT_SESSION);
   const [socialsState, setSocialsState] = useState<SocialConfig>(DEFAULT_SOCIALS);
   const [dataLoaded, setDataLoaded] = useState(false);
 
@@ -57,19 +90,27 @@ export default function App() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [products, promotions, orders, expenses, cashSession, socials] = await Promise.all([
+        const [products, promotions, combos, carousel, orders, expenses, cashSession, socials, shipping, bank] = await Promise.all([
           productsApi.getAll().catch(() => PRODUCTS),
           promotionsApi.getAll().catch(() => DEFAULT_PROMOTIONS),
+          combosApi.getAll().catch(() => DEFAULT_COMBOS),
+          carouselApi.getAll().catch(() => DEFAULT_CAROUSEL),
           ordersApi.getAll().catch(() => DEFAULT_ORDERS),
           expensesApi.getAll().catch(() => DEFAULT_EXPENSES),
           cashSessionApi.getCurrent().catch(() => DEFAULT_SESSION),
-          socialsApi.get().catch(() => DEFAULT_SOCIALS)
+          socialsApi.get().catch(() => DEFAULT_SOCIALS),
+          shippingApi.get().catch(() => DEFAULT_SHIPPING),
+          bankAccountsApi.get().catch(() => DEFAULT_BANK_ACCOUNT)
         ]);
 
         setProductsArr(products);
         setPromotionsArr(promotions);
+        setCombosArr(combos);
+        setCarouselArr(carousel);
         setOrdersArr(orders);
         setExpensesArr(expenses);
+        setShippingSettings(shipping || DEFAULT_SHIPPING);
+        setBankAccount(bank || DEFAULT_BANK_ACCOUNT);
         if (cashSession) setCashSessionState(cashSession);
         if (socials) setSocialsState(socials);
         setDataLoaded(true);
@@ -98,6 +139,45 @@ export default function App() {
       await promotionsApi.upsert(pm);
     } catch (error) {
       console.error('Error syncing promotions to Supabase:', error);
+    }
+  };
+
+  const setCombosWithSync = async (c: Combo[]) => {
+    setCombosArr(c);
+    try {
+      await combosApi.getAll();
+      await Promise.all(c.map((combo) => combosApi.update(combo.id, combo).catch(() => combosApi.create(combo))));
+    } catch (error) {
+      console.error('Error syncing combos to Supabase:', error);
+    }
+  };
+
+  const setCarouselWithSync = async (banners: CarouselBanner[]) => {
+    setCarouselArr(banners);
+    try {
+      await Promise.all(banners.map((banner) =>
+        carouselApi.update(banner.id, banner).catch(() => carouselApi.create(banner))
+      ));
+    } catch (error) {
+      console.error('Error syncing carousel banners to Supabase:', error);
+    }
+  };
+
+  const setShippingWithSync = async (settings: ShippingSettings) => {
+    setShippingSettings(settings);
+    try {
+      await shippingApi.upsert(settings);
+    } catch (error) {
+      console.error('Error syncing shipping settings to Supabase:', error);
+    }
+  };
+
+  const setBankAccountWithSync = async (account: BankAccount) => {
+    setBankAccount(account);
+    try {
+      await bankAccountsApi.upsert(account);
+    } catch (error) {
+      console.error('Error syncing bank account to Supabase:', error);
     }
   };
 
@@ -200,58 +280,72 @@ export default function App() {
     setCart((prev) => prev.filter((item) => item.product.id !== productId));
   };
 
-  const handleOrderComplete = async (orderData: { name: string; email: string; paymentMethod: string; finalTotal: number; items: CartItem[] }) => {
-    // Generate a beautiful, fully-functional invoice/order record
-    const sub = orderData.items.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
-    const mockOrder: Order = {
+  const handleOrderComplete = async (orderData: {
+    name: string;
+    email: string;
+    paymentMethod: string;
+    items: CartItem[];
+    shippingCost: number;
+    tax: number;
+    shippingZone: string;
+    voucherFileName?: string;
+  }) => {
+    const subtotal = orderData.items.reduce((acc, item) => acc + item.product.price * item.quantity, 0);
+    const total = subtotal + orderData.tax + orderData.shippingCost;
+    const paymentMethodLabel = orderData.paymentMethod === 'cod' ? 'EFECTIVO' : 'TRANSFERENCIA';
+
+    const newOrder: Order = {
       id: `FAC-${Math.floor(Math.random() * 90000) + 10000}`,
       customerName: orderData.name,
       customerEmail: orderData.email,
-      paymentMethod: orderData.paymentMethod === 'cash_delivery' ? 'EFECTIVO' : 'TRANSFERENCIA',
+      paymentMethod: paymentMethodLabel,
       items: orderData.items,
-      subtotal: sub,
-      tax: sub * 0.16,
-      shipping: 15,
-      total: orderData.finalTotal,
+      subtotal,
+      tax: orderData.tax,
+      shipping: orderData.shippingCost,
+      total,
+      shippingZone: orderData.shippingZone,
+      voucherFileName: orderData.voucherFileName,
       date: new Date().toISOString(),
       status: 'PENDIENTE',
-      notes: 'Orden de preventa registrada de manera automática por el cliente en el checkout'
+      notes: 'Pedido registrado automáticamente desde el checkout.'
     };
 
-    // Save order to Supabase
     try {
-      await ordersApi.create(mockOrder);
+      await ordersApi.create(newOrder);
     } catch (error) {
       console.error('Error saving order to Supabase:', error);
     }
 
-    // Update in-memory orders
-    const updatedOrders = [mockOrder, ...ordersArr];
+    const updatedOrders = [newOrder, ...ordersArr];
     setOrdersArr(updatedOrders);
 
-    // If active cash drawer is open, record this inflow!
     if (cashSessionState && cashSessionState.isOpen) {
-      const isCash = mockOrder.paymentMethod === 'EFECTIVO';
+      const isCash = paymentMethodLabel === 'EFECTIVO';
       const updatedSession: CashSession = {
         ...cashSessionState,
-        salesCash: cashSessionState.salesCash + (isCash ? mockOrder.total : 0),
-        salesTransfer: cashSessionState.salesTransfer + (!isCash ? mockOrder.total : 0),
-        expectedBalance: cashSessionState.expectedBalance + (isCash ? mockOrder.total : 0),
+        salesCash: cashSessionState.salesCash + (isCash ? newOrder.total : 0),
+        salesTransfer: cashSessionState.salesTransfer + (!isCash ? newOrder.total : 0),
+        expectedBalance: cashSessionState.expectedBalance + (isCash ? newOrder.total : 0),
         history: [
           ...(cashSessionState.history || []),
           {
             date: new Date().toISOString(),
-            action: `Venta Checkout (${mockOrder.paymentMethod})`,
-            amount: mockOrder.total,
-            notes: `Orden ${mockOrder.id} por ${mockOrder.customerName}`
+            action: `Venta Checkout (${newOrder.paymentMethod})`,
+            amount: newOrder.total,
+            notes: `Orden ${newOrder.id} por ${newOrder.customerName}`
           }
         ]
       };
       await setCashSessionWithSync(updatedSession);
     }
 
-    setOrderSuccessInfo(orderData);
-    setCart([]); // Clean cart
+    setOrderSuccessInfo({
+      ...orderData,
+      finalTotal: total,
+      items: orderData.items
+    });
+    setCart([]);
     setActiveTab('success');
   };
 
@@ -288,6 +382,7 @@ export default function App() {
                 selectedCountryCode={selectedCountryCode}
                 products={productsArr}
                 promotionBundles={promotionsArr}
+                carouselBanners={carouselArr}
                 onAddBundleToCart={handleAddBundleToCart}
               />
             )}
@@ -296,22 +391,13 @@ export default function App() {
               <CatalogView
                 onAddToCart={handleAddToCart}
                 onViewProductDetails={(p) => setSelectedProduct(p)}
-                showPricesAndCart={false}
                 selectedCountryCode={selectedCountryCode}
                 products={productsArr}
                 promotionBundles={promotionsArr}
-                onAddBundleToCart={handleAddBundleToCart}
-              />
-            )}
-
-            {activeTab === 'products' && (
-              <CatalogView
-                onAddToCart={handleAddToCart}
-                onViewProductDetails={(p) => setSelectedProduct(p)}
-                showPricesAndCart={true}
-                selectedCountryCode={selectedCountryCode}
-                products={productsArr}
-                promotionBundles={promotionsArr}
+                combos={combosArr}
+                carouselBanners={carouselArr}
+                shippingSettings={shippingSettings}
+                bankAccount={bankAccount}
                 onAddBundleToCart={handleAddBundleToCart}
               />
             )}
@@ -319,15 +405,6 @@ export default function App() {
             {activeTab === 'about' && (
               <AboutView
                 onExploreCollection={() => setActiveTab('catalog')}
-              />
-            )}
-
-            {activeTab === 'promotions' && (
-              <PromotionsView
-                onAddBundleToCart={handleAddBundleToCart}
-                onExploreCollection={() => setActiveTab('catalog')}
-                promotionBundles={promotionsArr}
-                products={productsArr}
               />
             )}
 
@@ -394,6 +471,14 @@ export default function App() {
                   setProducts={setProductsWithSync}
                   promotions={promotionsArr}
                   setPromotions={setPromotionsWithSync}
+                  combos={combosArr}
+                  setCombos={setCombosWithSync}
+                  carousel={carouselArr}
+                  setCarousel={setCarouselWithSync}
+                  shippingSettings={shippingSettings}
+                  setShippingSettings={setShippingWithSync}
+                  bankAccount={bankAccount}
+                  setBankAccount={setBankAccountWithSync}
                   orders={ordersArr}
                   setOrders={setOrdersWithSync}
                   expenses={expensesArr}
@@ -411,6 +496,8 @@ export default function App() {
               <CheckoutView
                 cart={cart}
                 total={cartTotal}
+                shippingSettings={shippingSettings}
+                bankAccount={bankAccount}
                 onBackToCatalog={() => setActiveTab('catalog')}
                 onOrderComplete={handleOrderComplete}
                 selectedCountryCode={selectedCountryCode}
@@ -645,8 +732,6 @@ export default function App() {
             <ul className="space-y-2 text-[#7D7569] font-light">
               <li className="hover:text-white cursor-pointer" onClick={() => setActiveTab('home')}>Inicio</li>
               <li className="hover:text-white cursor-pointer" onClick={() => setActiveTab('catalog')}>Catálogo</li>
-              <li className="hover:text-white cursor-pointer" onClick={() => setActiveTab('products')}>Productos</li>
-              <li className="hover:text-white cursor-pointer" onClick={() => setActiveTab('promotions')}>Promociones</li>
               <li className="hover:text-white cursor-pointer" onClick={() => setActiveTab('about')}>Sobre Nosotros</li>
             </ul>
           </div>

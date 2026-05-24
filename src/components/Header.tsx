@@ -26,8 +26,6 @@ export default function Header({
   const navItems = [
     { id: 'home', label: 'Inicio', icon: Compass },
     { id: 'catalog', label: 'Catálogo', icon: Layers },
-    { id: 'products', label: 'Productos', icon: ShoppingBag },
-    { id: 'promotions', label: 'Promociones', icon: Gift },
     { id: 'about', label: 'Sobre Nosotros', icon: Info },
     { id: 'contact', label: 'Contacto', icon: Calendar },
   ];

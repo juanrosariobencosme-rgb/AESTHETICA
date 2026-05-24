@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ShoppingBag, Star, Sparkles, Filter, Check, Eye, Gift } from 'lucide-react';
 import { PRODUCTS } from '../data';
-import { Product, PromotionBundle } from '../types';
+import { Product, PromotionBundle, Combo, CarouselBanner, ShippingSettings, BankAccount } from '../types';
 import { convertAndFormatPrice } from '../utils/currency';
 
 interface CatalogViewProps {
@@ -12,6 +12,10 @@ interface CatalogViewProps {
   selectedCountryCode?: string;
   products?: Product[];
   promotionBundles?: PromotionBundle[];
+  combos?: Combo[];
+  carouselBanners?: CarouselBanner[];
+  shippingSettings?: ShippingSettings;
+  bankAccount?: BankAccount;
   onAddBundleToCart?: (products: Product[], customName: string, customPrice: number) => void;
 }
 
@@ -94,6 +98,10 @@ export default function CatalogView({
   selectedCountryCode = 'MX',
   products = PRODUCTS,
   promotionBundles = [],
+  combos = [],
+  carouselBanners = [],
+  shippingSettings,
+  bankAccount,
   onAddBundleToCart
 }: CatalogViewProps) {
   const [selectedSkinTypes, setSelectedSkinTypes] = useState<string[]>(['all']);
@@ -461,6 +469,66 @@ export default function CatalogView({
                               onClick={() => {
                                 const bundleProducts = products.filter(p => bundle.productIds.includes(p.id));
                                 onAddBundleToCart(bundleProducts, bundle.title, bundle.price);
+                              }}
+                              className="w-full sm:w-auto py-2 px-4 bg-[#2A2621] hover:bg-[#C5A880] text-white text-[9px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2"
+                            >
+                              <Gift className="w-3 h-3" />
+                              Agregar
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {showPricesAndCart && combos && combos.length > 0 && (
+              <div className="mt-16 sm:mt-20 pt-8 sm:pt-12 border-t border-[#EADCC9]/30">
+                <div className="text-center space-y-4 mb-8 sm:mb-12">
+                  <span className="text-[10px] uppercase tracking-[0.3em] text-[#C5A880] font-bold flex items-center justify-center gap-2">
+                    <Gift className="w-4 h-4" />
+                    Combos Premium
+                  </span>
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-serif text-[#1C1917]">
+                    Packs de Rituales
+                  </h2>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                  {combos.slice(0, 3).map((combo) => (
+                    <motion.div
+                      key={combo.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="bg-white border border-[#EADCC9]/50 overflow-hidden shadow-xs hover:shadow-md transition-all duration-300"
+                    >
+                      <div className="relative aspect-4/5 overflow-hidden bg-stone-100">
+                        <img
+                          src={combo.image}
+                          alt={combo.title}
+                          className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                      <div className="p-4 sm:p-5 space-y-3">
+                        <div>
+                          <h3 className="font-serif text-base sm:text-lg text-[#1C1917]">{combo.title}</h3>
+                          <p className="text-[10px] text-[#C5A880] uppercase tracking-wider italic">{combo.subtitle}</p>
+                        </div>
+                        <p className="text-[11px] text-[#7D7569] leading-relaxed line-clamp-3">{combo.description}</p>
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                          <div>
+                            <span className="font-mono text-sm font-semibold text-[#1C1917]">{convertAndFormatPrice(combo.price, selectedCountryCode)}</span>
+                            {combo.valuePrice && (
+                              <span className="block text-[9px] text-[#A59F95] line-through">{convertAndFormatPrice(combo.valuePrice, selectedCountryCode)}</span>
+                            )}
+                          </div>
+                          {onAddBundleToCart && (
+                            <button
+                              onClick={() => {
+                                const comboProducts = products.filter(p => combo.productIds.includes(p.id));
+                                onAddBundleToCart(comboProducts, combo.title, combo.price);
                               }}
                               className="w-full sm:w-auto py-2 px-4 bg-[#2A2621] hover:bg-[#C5A880] text-white text-[9px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2"
                             >

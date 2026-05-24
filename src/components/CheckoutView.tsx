@@ -1,13 +1,24 @@
 import { useState, FormEvent } from 'react';
-import { motion } from 'motion/react';
 import { ShoppingBag, ArrowRight, Truck, Landmark, Circle, CheckCircle } from 'lucide-react';
-import { CartItem } from '../types';
+import { CartItem, ShippingSettings, BankAccount } from '../types';
 import { convertAndFormatPrice } from '../utils/currency';
 
 interface CheckoutViewProps {
   cart: CartItem[];
   total: number;
-  onOrderComplete: (orderData: { email: string; name: string; paymentMethod: string; finalTotal: number; items: CartItem[] }) => void;
+  shippingSettings?: ShippingSettings;
+  bankAccount?: BankAccount;
+  onOrderComplete: (orderData: {
+    email: string;
+    name: string;
+    paymentMethod: string;
+    finalTotal: number;
+    items: CartItem[];
+    shippingCost: number;
+    tax: number;
+    shippingZone: string;
+    voucherFileName?: string;
+  }) => void;
   onBackToCatalog: () => void;
   selectedCountryCode?: string;
 }
@@ -15,6 +26,8 @@ interface CheckoutViewProps {
 export default function CheckoutView({ 
   cart, 
   total, 
+  shippingSettings,
+  bankAccount,
   onOrderComplete, 
   onBackToCatalog,
   selectedCountryCode = 'MX'
@@ -26,21 +39,32 @@ export default function CheckoutView({
   const [city, setCity] = useState('');
   const [zip, setZip] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'cod' | 'transfer'>('cod');
+  const [voucherFile, setVoucherFile] = useState<File | null>(null);
 
-  const shippingCost = 150; // Standard premium courier shipping
-  const finalTotal = total + shippingCost;
+  const districtKeywords = /(distrito|santo domingo|distrito nacional|dn)/i;
+  const shippingZone = districtKeywords.test(`${address} ${city}`) ? 'Distrito' : 'Fuera del Distrito';
+  const shippingCost = shippingZone === 'Distrito'
+    ? shippingSettings?.districtRate ?? 200
+    : shippingSettings?.outsideRate ?? 350;
+  const taxRate = 0.18;
+  const subtotal = total;
+  const tax = Math.round(subtotal * taxRate);
+  const finalTotal = subtotal + tax + shippingCost;
 
   const handlePlaceOrder = (e: FormEvent) => {
     e.preventDefault();
     if (!fullName || !phone || !address || !city || !zip) return;
 
-    // Trigger parent view transition passing captured details
     onOrderComplete({
-      email: `${fullName.toLowerCase().replace(/\s+/g, '')}@example.com`, // mock email fallback
+      email: `${fullName.toLowerCase().replace(/\s+/g, '')}@example.com`,
       name: fullName,
       paymentMethod,
       finalTotal,
-      items: cart
+      items: cart,
+      shippingCost,
+      tax,
+      shippingZone,
+      voucherFileName: voucherFile?.name
     });
   };
 
@@ -221,6 +245,32 @@ export default function CheckoutView({
                   </div>
 
                 </div>
+
+                {paymentMethod === 'transfer' && (
+                  <section>
+                    <header className="mb-6">
+                      <h2 className="font-serif text-xl text-on-surface mb-2 font-light">Comprobante de Transferencia</h2>
+                      <p className="text-xs text-on-surface-variant">Adjunta tu comprobante para completar el pedido con mayor rapidez.</p>
+                    </header>
+                    <div className="space-y-4">
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            setVoucherFile(e.target.files[0]);
+                          }
+                        }}
+                        className="w-full text-sm text-on-surface"
+                      />
+                      {voucherFile && (
+                        <p className="text-[11px] text-on-surface-variant">
+                          Archivo seleccionado: <span className="font-medium text-on-surface">{voucherFile.name}</span>
+                        </p>
+                      )}
+                    </div>
+                  </section>
+                )}
               </section>
 
             </div>
@@ -262,10 +312,14 @@ export default function CheckoutView({
                 <div className="border-t border-outline-variant/30 pt-6 flex flex-col gap-3 mb-8 text-sm">
                   <div className="flex justify-between text-on-surface-variant font-sans">
                     <span>Subtotal</span>
-                    <span className="text-on-surface">{convertAndFormatPrice(total, selectedCountryCode)}</span>
+                    <span className="text-on-surface">{convertAndFormatPrice(subtotal, selectedCountryCode)}</span>
                   </div>
                   <div className="flex justify-between text-on-surface-variant font-sans">
-                    <span>Envío Estándar</span>
+                    <span>Impuestos (18%)</span>
+                    <span className="text-on-surface">{convertAndFormatPrice(tax, selectedCountryCode)}</span>
+                  </div>
+                  <div className="flex justify-between text-on-surface-variant font-sans">
+                    <span>Envío - {shippingZone}</span>
                     <span className="text-on-surface">{convertAndFormatPrice(shippingCost, selectedCountryCode)}</span>
                   </div>
                   <div className="flex justify-between text-[20px] text-on-surface font-serif mt-4 pt-4 border-t border-outline-variant/30 font-medium">
@@ -275,6 +329,28 @@ export default function CheckoutView({
                 </div>
 
                 {/* CTA Submit Button */}
+                {paymentMethod === 'transfer' && bankAccount && (
+                  <div className="mb-6 rounded-2xl border border-outline-variant/40 bg-surface-container px-5 py-4 text-sm text-on-surface-variant">
+                    <p className="font-semibold text-on-surface mb-2">Detalles de Pago</p>
+                    <p className="text-xs leading-relaxed">
+                      Banco: <span className="font-medium text-on-surface">{bankAccount.bankType}</span>
+                    </p>
+                    <p className="text-xs leading-relaxed">
+                      Cuenta: <span className="font-medium text-on-surface">{bankAccount.accountNumber}</span>
+                    </p>
+                    <p className="text-xs leading-relaxed">
+                      Titular: <span className="font-medium text-on-surface">{bankAccount.beneficiary}</span>
+                    </p>
+                    {bankAccount.clabe && (
+                      <p className="text-xs leading-relaxed">
+                        CLABE: <span className="font-medium text-on-surface">{bankAccount.clabe}</span>
+                      </p>
+                    )}
+                    <p className="text-xs leading-relaxed mt-2">
+                      Envía tu comprobante y finalizaremos la verificación en breve.
+                    </p>
+                  </div>
+                )}
                 <button
                   type="submit"
                   className="w-full bg-primary-container text-on-primary-container py-4 px-6 rounded font-semibold text-xs tracking-widest uppercase hover:bg-primary hover:text-white transition-all duration-300 flex items-center justify-center gap-2 group shadow-sm cursor-pointer"
