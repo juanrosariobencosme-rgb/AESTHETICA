@@ -10,17 +10,19 @@ export const ordersApi = {
     
     if (error) throw error;
     
-    // Transform snake_case to camelCase
-    return data.map(order => ({
+    // Transform columnas DB (minúsculas) -> camelCase (app)
+    return (data || []).map(order => ({
       id: order.id,
-      customerName: order.customerName,
-      customerEmail: order.customerEmail,
-      paymentMethod: order.paymentMethod,
+      customerName: order.customername,
+      customerEmail: order.customeremail,
+      paymentMethod: order.paymentmethod,
       items: order.items,
       subtotal: order.subtotal,
       tax: order.tax,
       shipping: order.shipping,
       total: order.total,
+      shippingZone: order.shippingzone ?? undefined,
+      voucherFileName: order.voucherfilename ?? undefined,
       date: order.date,
       status: order.status,
       notes: order.notes
@@ -38,17 +40,19 @@ export const ordersApi = {
     
     if (!data) return null;
     
-    // Transform snake_case to camelCase
+    // Transform columnas DB (minúsculas) -> camelCase (app)
     return {
       id: data.id,
-      customerName: data.customerName,
-      customerEmail: data.customerEmail,
-      paymentMethod: data.paymentMethod,
+      customerName: data.customername,
+      customerEmail: data.customeremail,
+      paymentMethod: data.paymentmethod,
       items: data.items,
       subtotal: data.subtotal,
       tax: data.tax,
       shipping: data.shipping,
       total: data.total,
+      shippingZone: data.shippingzone ?? undefined,
+      voucherFileName: data.voucherfilename ?? undefined,
       date: data.date,
       status: data.status,
       notes: data.notes
@@ -56,20 +60,22 @@ export const ordersApi = {
   },
 
   async create(order: Order): Promise<Order> {
-    // Transform camelCase to snake_case
+    // Transform camelCase (app) -> columnas DB (minúsculas)
     const dbOrder = {
       id: order.id,
-      customerName: order.customerName,
-      customerEmail: order.customerEmail,
-      paymentMethod: order.paymentMethod,
+      customername: order.customerName,
+      customeremail: order.customerEmail,
+      paymentmethod: order.paymentMethod,
       items: order.items,
       subtotal: order.subtotal,
       tax: order.tax,
       shipping: order.shipping,
       total: order.total,
+      shippingzone: order.shippingZone ?? null,
+      voucherfilename: order.voucherFileName ?? null,
       date: order.date,
       status: order.status,
-      notes: order.notes
+      notes: order.notes ?? null
     };
     
     const { data, error } = await supabase
@@ -80,17 +86,19 @@ export const ordersApi = {
     
     if (error) throw error;
     
-    // Transform back to camelCase
+    // Transform columnas DB (minúsculas) -> camelCase (app)
     return {
       id: data.id,
-      customerName: data.customerName,
-      customerEmail: data.customerEmail,
-      paymentMethod: data.paymentMethod,
+      customerName: data.customername,
+      customerEmail: data.customeremail,
+      paymentMethod: data.paymentmethod,
       items: data.items,
       subtotal: data.subtotal,
       tax: data.tax,
       shipping: data.shipping,
       total: data.total,
+      shippingZone: data.shippingzone ?? undefined,
+      voucherFileName: data.voucherfilename ?? undefined,
       date: data.date,
       status: data.status,
       notes: data.notes
@@ -98,16 +106,18 @@ export const ordersApi = {
   },
 
   async update(id: string, order: Partial<Order>): Promise<Order> {
-    // Transform camelCase to snake_case
+    // Transform camelCase (app) -> columnas DB (minúsculas)
     const dbOrder: any = {};
-    if (order.customerName !== undefined) dbOrder.customerName = order.customerName;
-    if (order.customerEmail !== undefined) dbOrder.customerEmail = order.customerEmail;
-    if (order.paymentMethod !== undefined) dbOrder.paymentMethod = order.paymentMethod;
+    if (order.customerName !== undefined) dbOrder.customername = order.customerName;
+    if (order.customerEmail !== undefined) dbOrder.customeremail = order.customerEmail;
+    if (order.paymentMethod !== undefined) dbOrder.paymentmethod = order.paymentMethod;
     if (order.items !== undefined) dbOrder.items = order.items;
     if (order.subtotal !== undefined) dbOrder.subtotal = order.subtotal;
     if (order.tax !== undefined) dbOrder.tax = order.tax;
     if (order.shipping !== undefined) dbOrder.shipping = order.shipping;
     if (order.total !== undefined) dbOrder.total = order.total;
+    if (order.shippingZone !== undefined) dbOrder.shippingzone = order.shippingZone;
+    if (order.voucherFileName !== undefined) dbOrder.voucherfilename = order.voucherFileName;
     if (order.date !== undefined) dbOrder.date = order.date;
     if (order.status !== undefined) dbOrder.status = order.status;
     if (order.notes !== undefined) dbOrder.notes = order.notes;
@@ -121,17 +131,19 @@ export const ordersApi = {
     
     if (error) throw error;
     
-    // Transform back to camelCase
+    // Transform columnas DB (minúsculas) -> camelCase (app)
     return {
       id: data.id,
-      customerName: data.customerName,
-      customerEmail: data.customerEmail,
-      paymentMethod: data.paymentMethod,
+      customerName: data.customername,
+      customerEmail: data.customeremail,
+      paymentMethod: data.paymentmethod,
       items: data.items,
       subtotal: data.subtotal,
       tax: data.tax,
       shipping: data.shipping,
       total: data.total,
+      shippingZone: data.shippingzone ?? undefined,
+      voucherFileName: data.voucherfilename ?? undefined,
       date: data.date,
       status: data.status,
       notes: data.notes
@@ -157,17 +169,19 @@ export const ordersApi = {
     
     if (error) throw error;
     
-    // Transform back to camelCase
+    // Transform columnas DB (minúsculas) -> camelCase (app)
     return {
       id: data.id,
-      customerName: data.customerName,
-      customerEmail: data.customerEmail,
-      paymentMethod: data.paymentMethod,
+      customerName: data.customername,
+      customerEmail: data.customeremail,
+      paymentMethod: data.paymentmethod,
       items: data.items,
       subtotal: data.subtotal,
       tax: data.tax,
       shipping: data.shipping,
       total: data.total,
+      shippingZone: data.shippingzone ?? undefined,
+      voucherFileName: data.voucherfilename ?? undefined,
       date: data.date,
       status: data.status,
       notes: data.notes

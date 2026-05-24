@@ -1,6 +1,38 @@
 import { supabase } from '../supabase';
 import { Combo } from '../../types';
 
+function fromDbCombo(row: any): Combo {
+  return {
+    id: row.id,
+    title: row.title,
+    subtitle: row.subtitle ?? undefined,
+    description: row.description,
+    productIds: row.productids,
+    price: row.price,
+    valuePrice: row.valueprice ?? undefined,
+    image: row.image,
+    tag: row.tag ?? undefined,
+    active: row.active ?? undefined,
+    category: row.category ?? undefined
+  };
+}
+
+function toDbCombo(combo: Combo | Partial<Combo>): any {
+  return {
+    ...(combo.id !== undefined ? { id: combo.id } : {}),
+    ...(combo.title !== undefined ? { title: combo.title } : {}),
+    ...(combo.subtitle !== undefined ? { subtitle: combo.subtitle } : {}),
+    ...(combo.description !== undefined ? { description: combo.description } : {}),
+    ...(combo.productIds !== undefined ? { productids: combo.productIds } : {}),
+    ...(combo.price !== undefined ? { price: combo.price } : {}),
+    ...(combo.valuePrice !== undefined ? { valueprice: combo.valuePrice } : {}),
+    ...(combo.image !== undefined ? { image: combo.image } : {}),
+    ...(combo.tag !== undefined ? { tag: combo.tag } : {}),
+    ...(combo.active !== undefined ? { active: combo.active } : {}),
+    ...(combo.category !== undefined ? { category: combo.category } : {})
+  };
+}
+
 export const combosApi = {
   async getAll(): Promise<Combo[]> {
     const { data, error } = await supabase
@@ -13,13 +45,14 @@ export const combosApi = {
       throw error;
     }
 
-    return (data || []) as Combo[];
+    return (data || []).map(fromDbCombo);
   },
 
   async create(combo: Combo): Promise<Combo> {
+    const dbCombo = toDbCombo(combo);
     const { data, error } = await supabase
       .from('combos')
-      .insert(combo)
+      .insert(dbCombo)
       .select()
       .single();
 
@@ -28,13 +61,14 @@ export const combosApi = {
       throw error;
     }
 
-    return data as Combo;
+    return fromDbCombo(data);
   },
 
   async update(id: string, combo: Partial<Combo>): Promise<Combo> {
+    const dbCombo = toDbCombo(combo);
     const { data, error } = await supabase
       .from('combos')
-      .update(combo)
+      .update(dbCombo)
       .eq('id', id)
       .select()
       .single();
@@ -44,7 +78,7 @@ export const combosApi = {
       throw error;
     }
 
-    return data as Combo;
+    return fromDbCombo(data);
   },
 
   async delete(id: string): Promise<void> {

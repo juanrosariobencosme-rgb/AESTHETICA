@@ -14,16 +14,19 @@ export const promotionsApi = {
         throw error;
       }
 
-      return data.map(promo => ({
+      // Transform columnas DB (minúsculas) -> camelCase (app)
+      return (data || []).map(promo => ({
         id: promo.id,
         title: promo.title,
         subtitle: promo.subtitle,
         description: promo.description,
-        productIds: promo.productIds,
+        productIds: promo.productids,
         price: promo.price,
-        valuePrice: promo.valuePrice,
+        valuePrice: promo.valueprice ?? undefined,
         image: promo.image,
-        tag: promo.tag
+        tag: promo.tag ?? undefined,
+        active: promo.active ?? undefined,
+        category: promo.category ?? undefined
       })) as PromotionBundle[];
     } catch (error) {
       console.error('Error in promotionsApi.getAll:', error);
@@ -51,11 +54,13 @@ export const promotionsApi = {
         title: data.title,
         subtitle: data.subtitle,
         description: data.description,
-        productIds: data.productIds,
+        productIds: data.productids,
         price: data.price,
-        valuePrice: data.valuePrice,
+        valuePrice: data.valueprice ?? undefined,
         image: data.image,
-        tag: data.tag
+        tag: data.tag ?? undefined,
+        active: data.active ?? undefined,
+        category: data.category ?? undefined
       } as PromotionBundle;
     } catch (error) {
       console.error('Error in promotionsApi.getById:', error);
@@ -65,16 +70,19 @@ export const promotionsApi = {
 
   async create(promotion: PromotionBundle): Promise<PromotionBundle> {
     try {
+      // Transform camelCase (app) -> columnas DB (minúsculas)
       const dbPromotion = {
         id: promotion.id,
         title: promotion.title,
         subtitle: promotion.subtitle,
         description: promotion.description,
-        productIds: promotion.productIds,
+        productids: promotion.productIds,
         price: promotion.price,
-        valuePrice: promotion.valuePrice,
+        valueprice: promotion.valuePrice ?? null,
         image: promotion.image,
-        tag: promotion.tag
+        tag: promotion.tag ?? null,
+        active: promotion.active ?? true,
+        category: promotion.category ?? 'Promoción'
       };
 
       console.log('Creating promotion:', dbPromotion);
@@ -97,11 +105,13 @@ export const promotionsApi = {
         title: data.title,
         subtitle: data.subtitle,
         description: data.description,
-        productIds: data.productIds,
+        productIds: data.productids,
         price: data.price,
-        valuePrice: data.valuePrice,
+        valuePrice: data.valueprice ?? undefined,
         image: data.image,
-        tag: data.tag
+        tag: data.tag ?? undefined,
+        active: data.active ?? undefined,
+        category: data.category ?? undefined
       } as PromotionBundle;
     } catch (error) {
       console.error('Error in promotionsApi.create:', error);
@@ -134,16 +144,19 @@ export const promotionsApi = {
     try {
       console.log('Upserting promotions:', promotions.length);
 
+      // Transform camelCase (app) -> columnas DB (minúsculas)
       const dbPromotions = promotions.map(promo => ({
         id: promo.id,
         title: promo.title,
         subtitle: promo.subtitle,
         description: promo.description,
-        productIds: promo.productIds,
+        productids: promo.productIds,
         price: promo.price,
-        valuePrice: promo.valuePrice,
+        valueprice: promo.valuePrice ?? null,
         image: promo.image,
-        tag: promo.tag
+        tag: promo.tag ?? null,
+        active: promo.active ?? true,
+        category: promo.category ?? 'Promoción'
       }));
 
       const { data, error } = await supabase
@@ -158,16 +171,19 @@ export const promotionsApi = {
 
       console.log('Promotions upserted successfully');
 
-      return data.map(promo => ({
+      // Transform columnas DB (minúsculas) -> camelCase (app)
+      return (data || []).map(promo => ({
         id: promo.id,
         title: promo.title,
         subtitle: promo.subtitle,
         description: promo.description,
-        productIds: promo.productIds,
+        productIds: promo.productids,
         price: promo.price,
-        valuePrice: promo.valuePrice,
+        valuePrice: promo.valueprice ?? undefined,
         image: promo.image,
-        tag: promo.tag
+        tag: promo.tag ?? undefined,
+        active: promo.active ?? undefined,
+        category: promo.category ?? undefined
       })) as PromotionBundle[];
     } catch (error) {
       console.error('Error in promotionsApi.upsert:', error);

@@ -1,6 +1,26 @@
 import { supabase } from '../supabase';
 import { Product } from '../../types';
 
+function toDbProduct(product: Product | Partial<Product>): any {
+  // Mantener solo columnas que existen en `supabase-schema.sql` (evita errores "column ... does not exist")
+  return {
+    ...(product.id !== undefined ? { id: product.id } : {}),
+    ...(product.name !== undefined ? { name: product.name } : {}),
+    ...(product.subtitle !== undefined ? { subtitle: product.subtitle } : {}),
+    ...(product.description !== undefined ? { description: product.description } : {}),
+    ...(product.price !== undefined ? { price: product.price } : {}),
+    ...(product.size !== undefined ? { size: product.size } : {}),
+    ...(product.ingredients !== undefined ? { ingredients: product.ingredients } : {}),
+    ...(product.benefits !== undefined ? { benefits: product.benefits } : {}),
+    ...(product.usage !== undefined ? { usage: product.usage } : {}),
+    ...(product.image !== undefined ? { image: product.image } : {}),
+    ...(product.concern !== undefined ? { concern: product.concern } : {}),
+    ...(product.rating !== undefined ? { rating: product.rating } : {}),
+    ...(product.texture !== undefined ? { texture: product.texture } : {}),
+    ...(product.stock !== undefined ? { stock: product.stock } : {})
+  };
+}
+
 export const productsApi = {
   async getAll(): Promise<Product[]> {
     try {
@@ -44,10 +64,11 @@ export const productsApi = {
   async create(product: Product): Promise<Product> {
     try {
       console.log('Creating product:', product);
+      const dbProduct = toDbProduct(product);
       
       const { data, error } = await supabase
         .from('products')
-        .insert(product)
+        .insert(dbProduct)
         .select()
         .single();
       
@@ -67,10 +88,11 @@ export const productsApi = {
   async update(id: string, product: Partial<Product>): Promise<Product> {
     try {
       console.log('Updating product:', id, product);
+      const dbProduct = toDbProduct(product);
       
       const { data, error } = await supabase
         .from('products')
-        .update(product)
+        .update(dbProduct)
         .eq('id', id)
         .select()
         .single();
@@ -112,10 +134,11 @@ export const productsApi = {
   async upsert(products: Product[]): Promise<Product[]> {
     try {
       console.log('Upserting products:', products.length);
+      const dbProducts = products.map(toDbProduct);
       
       const { data, error } = await supabase
         .from('products')
-        .upsert(products, { onConflict: 'id' })
+        .upsert(dbProducts, { onConflict: 'id' })
         .select();
       
       if (error) {

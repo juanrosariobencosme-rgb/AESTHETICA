@@ -1,6 +1,15 @@
 import { supabase } from '../supabase';
 import { ShippingSettings } from '../../types';
 
+function fromDbSettings(row: any): ShippingSettings {
+  return {
+    id: row.id,
+    districtRate: Number(row.districtrate),
+    outsideRate: Number(row.outsiderate),
+    districtKeywords: row.districtkeywords || []
+  };
+}
+
 export const shippingApi = {
   async get(): Promise<ShippingSettings | null> {
     const { data, error } = await supabase
@@ -16,20 +25,15 @@ export const shippingApi = {
 
     if (!data) return null;
 
-    return {
-      id: data.id,
-      districtRate: Number(data.districtRate),
-      outsideRate: Number(data.outsideRate),
-      districtKeywords: data.districtKeywords || []
-    } as ShippingSettings;
+    return fromDbSettings(data);
   },
 
   async upsert(settings: ShippingSettings): Promise<ShippingSettings> {
     const dbSettings = {
       id: 'default',
-      districtRate: settings.districtRate,
-      outsideRate: settings.outsideRate,
-      districtKeywords: settings.districtKeywords
+      districtrate: settings.districtRate,
+      outsiderate: settings.outsideRate,
+      districtkeywords: settings.districtKeywords
     };
 
     const { data, error } = await supabase
@@ -43,11 +47,6 @@ export const shippingApi = {
       throw error;
     }
 
-    return {
-      id: data.id,
-      districtRate: Number(data.districtRate),
-      outsideRate: Number(data.outsideRate),
-      districtKeywords: data.districtKeywords || []
-    } as ShippingSettings;
+    return fromDbSettings(data);
   }
 };

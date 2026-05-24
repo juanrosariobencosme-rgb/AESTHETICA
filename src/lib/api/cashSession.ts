@@ -1,14 +1,45 @@
 import { supabase } from '../supabase';
 import { CashSession } from '../../types';
 
+function fromDbSession(row: any): CashSession {
+  return {
+    id: row.id,
+    isOpen: row.isopen,
+    openedAt: row.openedat,
+    closedAt: row.closedat ?? null,
+    startingBalance: Number(row.startingbalance),
+    salesCash: Number(row.salescash),
+    salesTransfer: Number(row.salestransfer),
+    totalExpenses: Number(row.totalexpenses),
+    expectedBalance: Number(row.expectedbalance),
+    history: row.history ?? []
+  };
+}
+
+function toDbSession(session: CashSession | Partial<CashSession>): any {
+  // Nota: el esquema actual NO incluye actual_balance/difference, así que no los enviamos.
+  return {
+    ...(session.id ? { id: session.id } : {}),
+    ...(session.isOpen !== undefined ? { isopen: session.isOpen } : {}),
+    ...(session.openedAt !== undefined ? { openedat: session.openedAt } : {}),
+    ...(session.closedAt !== undefined ? { closedat: session.closedAt } : {}),
+    ...(session.startingBalance !== undefined ? { startingbalance: session.startingBalance } : {}),
+    ...(session.salesCash !== undefined ? { salescash: session.salesCash } : {}),
+    ...(session.salesTransfer !== undefined ? { salestransfer: session.salesTransfer } : {}),
+    ...(session.totalExpenses !== undefined ? { totalexpenses: session.totalExpenses } : {}),
+    ...(session.expectedBalance !== undefined ? { expectedbalance: session.expectedBalance } : {}),
+    ...(session.history !== undefined ? { history: session.history } : {})
+  };
+}
+
 export const cashSessionApi = {
   async getCurrent(): Promise<CashSession | null> {
     try {
       const { data, error } = await supabase
         .from('cash_sessions')
         .select('*')
-        .eq('isOpen', true)
-        .order('openedAt', { ascending: false })
+        .eq('isopen', true)
+        .order('openedat', { ascending: false })
         .limit(1)
         .single();
 
@@ -19,20 +50,7 @@ export const cashSessionApi = {
 
       if (!data) return null;
 
-      return {
-        id: data.id,
-        isOpen: data.isOpen,
-        openedAt: data.openedAt,
-        closedAt: data.closedAt,
-        startingBalance: data.startingBalance,
-        salesCash: data.salesCash,
-        salesTransfer: data.salesTransfer,
-        totalExpenses: data.totalExpenses,
-        expectedBalance: data.expectedBalance,
-        actualBalance: data.actualBalance,
-        difference: data.difference,
-        history: data.history
-      } as CashSession;
+      return fromDbSession(data);
     } catch (error) {
       console.error('Error in cashSessionApi.getCurrent:', error);
       throw error;
@@ -41,20 +59,7 @@ export const cashSessionApi = {
 
   async create(session: CashSession): Promise<CashSession> {
     try {
-      const dbSession = {
-        id: session.id,
-        isOpen: session.isOpen,
-        openedAt: session.openedAt,
-        closedAt: session.closedAt,
-        startingBalance: session.startingBalance,
-        salesCash: session.salesCash,
-        salesTransfer: session.salesTransfer,
-        totalExpenses: session.totalExpenses,
-        expectedBalance: session.expectedBalance,
-        actualBalance: session.actualBalance,
-        difference: session.difference,
-        history: session.history
-      };
+      const dbSession = toDbSession(session);
 
       console.log('Creating cash session:', dbSession);
 
@@ -71,20 +76,7 @@ export const cashSessionApi = {
 
       console.log('Cash session created successfully');
 
-      return {
-        id: data.id,
-        isOpen: data.isOpen,
-        openedAt: data.openedAt,
-        closedAt: data.closedAt,
-        startingBalance: data.startingBalance,
-        salesCash: data.salesCash,
-        salesTransfer: data.salesTransfer,
-        totalExpenses: data.totalExpenses,
-        expectedBalance: data.expectedBalance,
-        actualBalance: data.actualBalance,
-        difference: data.difference,
-        history: data.history
-      } as CashSession;
+      return fromDbSession(data);
     } catch (error) {
       console.error('Error in cashSessionApi.create:', error);
       throw error;
@@ -98,8 +90,8 @@ export const cashSessionApi = {
       const { data, error } = await supabase
         .from('cash_sessions')
         .update({
-          isOpen: false,
-          closedAt: new Date().toISOString()
+          isopen: false,
+          closedat: new Date().toISOString()
         })
         .eq('id', id)
         .select()
@@ -112,20 +104,7 @@ export const cashSessionApi = {
 
       console.log('Cash session closed successfully');
 
-      return {
-        id: data.id,
-        isOpen: data.isOpen,
-        openedAt: data.openedAt,
-        closedAt: data.closedAt,
-        startingBalance: data.startingBalance,
-        salesCash: data.salesCash,
-        salesTransfer: data.salesTransfer,
-        totalExpenses: data.totalExpenses,
-        expectedBalance: data.expectedBalance,
-        actualBalance: data.actualBalance,
-        difference: data.difference,
-        history: data.history
-      } as CashSession;
+      return fromDbSession(data);
     } catch (error) {
       console.error('Error in cashSessionApi.closeSession:', error);
       throw error;
@@ -136,18 +115,7 @@ export const cashSessionApi = {
     try {
       console.log('Updating cash session:', id, session);
 
-      const dbSession: any = {};
-      if (session.isOpen !== undefined) dbSession.isOpen = session.isOpen;
-      if (session.openedAt !== undefined) dbSession.openedAt = session.openedAt;
-      if (session.closedAt !== undefined) dbSession.closedAt = session.closedAt;
-      if (session.startingBalance !== undefined) dbSession.startingBalance = session.startingBalance;
-      if (session.salesCash !== undefined) dbSession.salesCash = session.salesCash;
-      if (session.salesTransfer !== undefined) dbSession.salesTransfer = session.salesTransfer;
-      if (session.totalExpenses !== undefined) dbSession.totalExpenses = session.totalExpenses;
-      if (session.expectedBalance !== undefined) dbSession.expectedBalance = session.expectedBalance;
-      if (session.actualBalance !== undefined) dbSession.actualBalance = session.actualBalance;
-      if (session.difference !== undefined) dbSession.difference = session.difference;
-      if (session.history !== undefined) dbSession.history = session.history;
+      const dbSession: any = toDbSession(session);
 
       const { data, error } = await supabase
         .from('cash_sessions')
@@ -163,20 +131,7 @@ export const cashSessionApi = {
 
       console.log('Cash session updated successfully');
 
-      return {
-        id: data.id,
-        isOpen: data.isOpen,
-        openedAt: data.openedAt,
-        closedAt: data.closedAt,
-        startingBalance: data.startingBalance,
-        salesCash: data.salesCash,
-        salesTransfer: data.salesTransfer,
-        totalExpenses: data.totalExpenses,
-        expectedBalance: data.expectedBalance,
-        actualBalance: data.actualBalance,
-        difference: data.difference,
-        history: data.history
-      } as CashSession;
+      return fromDbSession(data);
     } catch (error) {
       console.error('Error in cashSessionApi.update:', error);
       throw error;

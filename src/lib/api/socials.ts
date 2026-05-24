@@ -1,6 +1,15 @@
 import { supabase } from '../supabase';
 import { SocialConfig } from '../../types';
 
+function fromDbSocials(row: any): SocialConfig {
+  return {
+    whatsAppPhone: row.whatsappphone,
+    whatsAppText: row.whatsapptext,
+    instagramUrl: row.instagramurl,
+    facebookUrl: row.facebookurl
+  };
+}
+
 export const socialsApi = {
   async get(): Promise<SocialConfig | null> {
     try {
@@ -17,12 +26,7 @@ export const socialsApi = {
 
       if (!data) return null;
 
-      return {
-        whatsappPhone: data.whatsappPhone,
-        whatsAppText: data.whatsAppText,
-        instagramUrl: data.instagramUrl,
-        facebookUrl: data.facebookUrl
-      };
+      return fromDbSocials(data);
     } catch (error) {
       console.error('Error in socialsApi.get:', error);
       throw error;
@@ -33,10 +37,10 @@ export const socialsApi = {
     try {
       const dbConfig = {
         id: 'default',
-        whatsappPhone: config.whatsappPhone,
-        whatsAppText: config.whatsAppText,
-        instagramUrl: config.instagramUrl,
-        facebookUrl: config.facebookUrl
+        whatsappphone: config.whatsAppPhone,
+        whatsapptext: config.whatsAppText,
+        instagramurl: config.instagramUrl,
+        facebookurl: config.facebookUrl
       };
 
       console.log('Updating social config:', dbConfig);
@@ -54,12 +58,7 @@ export const socialsApi = {
 
       console.log('Social config updated successfully');
 
-      return {
-        whatsappPhone: data.whatsappPhone,
-        whatsAppText: data.whatsAppText,
-        instagramUrl: data.instagramUrl,
-        facebookUrl: data.facebookUrl
-      };
+      return fromDbSocials(data);
     } catch (error) {
       console.error('Error in socialsApi.update:', error);
       throw error;

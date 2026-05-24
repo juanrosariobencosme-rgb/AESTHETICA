@@ -1,6 +1,17 @@
 import { supabase } from '../supabase';
 import { BankAccount } from '../../types';
 
+function fromDbAccount(row: any): BankAccount {
+  return {
+    id: row.id,
+    bankType: row.banktype,
+    beneficiary: row.beneficiary,
+    accountNumber: row.accountnumber,
+    clabe: row.clabe ?? undefined,
+    active: row.active ?? undefined
+  };
+}
+
 export const bankAccountsApi = {
   async get(): Promise<BankAccount | null> {
     const { data, error } = await supabase
@@ -16,23 +27,16 @@ export const bankAccountsApi = {
 
     if (!data) return null;
 
-    return {
-      id: data.id,
-      bankType: data.bankType,
-      beneficiary: data.beneficiary,
-      accountNumber: data.accountNumber,
-      clabe: data.clabe,
-      active: data.active
-    } as BankAccount;
+    return fromDbAccount(data);
   },
 
   async upsert(account: BankAccount): Promise<BankAccount> {
     const dbAccount = {
       id: 'default',
-      bankType: account.bankType,
+      banktype: account.bankType,
       beneficiary: account.beneficiary,
-      accountNumber: account.accountNumber,
-      clabe: account.clabe,
+      accountnumber: account.accountNumber,
+      clabe: account.clabe ?? null,
       active: account.active ?? true
     };
 
@@ -47,13 +51,6 @@ export const bankAccountsApi = {
       throw error;
     }
 
-    return {
-      id: data.id,
-      bankType: data.bankType,
-      beneficiary: data.beneficiary,
-      accountNumber: data.accountNumber,
-      clabe: data.clabe,
-      active: data.active
-    } as BankAccount;
+    return fromDbAccount(data);
   }
 };

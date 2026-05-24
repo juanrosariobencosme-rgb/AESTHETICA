@@ -1,6 +1,36 @@
 import { supabase } from '../supabase';
 import { CarouselBanner } from '../../types';
 
+function fromDbBanner(row: any): CarouselBanner {
+  return {
+    id: row.id,
+    image: row.image,
+    title: row.title,
+    description: row.description,
+    buttonText: row.buttontext ?? undefined,
+    buttonUrl: row.buttonurl ?? undefined,
+    relatedProductId: row.relatedproductid ?? undefined,
+    active: row.active ?? undefined,
+    priority: row.priority ?? undefined,
+    category: row.category ?? undefined
+  };
+}
+
+function toDbBanner(banner: CarouselBanner | Partial<CarouselBanner>): any {
+  return {
+    ...(banner.id !== undefined ? { id: banner.id } : {}),
+    ...(banner.image !== undefined ? { image: banner.image } : {}),
+    ...(banner.title !== undefined ? { title: banner.title } : {}),
+    ...(banner.description !== undefined ? { description: banner.description } : {}),
+    ...(banner.buttonText !== undefined ? { buttontext: banner.buttonText } : {}),
+    ...(banner.buttonUrl !== undefined ? { buttonurl: banner.buttonUrl } : {}),
+    ...(banner.relatedProductId !== undefined ? { relatedproductid: banner.relatedProductId } : {}),
+    ...(banner.active !== undefined ? { active: banner.active } : {}),
+    ...(banner.priority !== undefined ? { priority: banner.priority } : {}),
+    ...(banner.category !== undefined ? { category: banner.category } : {})
+  };
+}
+
 export const carouselApi = {
   async getAll(): Promise<CarouselBanner[]> {
     const { data, error } = await supabase
@@ -13,13 +43,14 @@ export const carouselApi = {
       throw error;
     }
 
-    return (data || []) as CarouselBanner[];
+    return (data || []).map(fromDbBanner);
   },
 
   async create(banner: CarouselBanner): Promise<CarouselBanner> {
+    const dbBanner = toDbBanner(banner);
     const { data, error } = await supabase
       .from('carousel_banners')
-      .insert(banner)
+      .insert(dbBanner)
       .select()
       .single();
 
@@ -28,13 +59,14 @@ export const carouselApi = {
       throw error;
     }
 
-    return data as CarouselBanner;
+    return fromDbBanner(data);
   },
 
   async update(id: string, banner: Partial<CarouselBanner>): Promise<CarouselBanner> {
+    const dbBanner = toDbBanner(banner);
     const { data, error } = await supabase
       .from('carousel_banners')
-      .update(banner)
+      .update(dbBanner)
       .eq('id', id)
       .select()
       .single();
@@ -44,7 +76,7 @@ export const carouselApi = {
       throw error;
     }
 
-    return data as CarouselBanner;
+    return fromDbBanner(data);
   },
 
   async delete(id: string): Promise<void> {
