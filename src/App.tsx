@@ -4,7 +4,7 @@ import { Star, X, ShoppingBag, Sparkles, Check, Heart, Shield, Award, HelpCircle
 
 // Data & Components imports
 import { PRODUCTS } from './data';
-import { Product, CartItem, PromotionBundle, Combo, CarouselBanner, Order, Expense, CashSession, SocialConfig, ShippingSettings, BankAccount } from './types';
+import { Product, CartItem, PromotionBundle, Combo, CarouselBanner, Order, Expense, CashSession, SocialConfig, ShippingSettings, BankAccount, SkinType } from './types';
 import Header from './components/Header';
 import HomeView from './components/HomeView';
 import CatalogView from './components/CatalogView';
@@ -14,6 +14,7 @@ import OrderSuccessView from './components/OrderSuccessView';
 import CartSidebar from './components/CartSidebar';
 import AboutView from './components/AboutView';
 import AdminPanel from './components/AdminPanel';
+import FallingPetals from './components/FallingPetals';
 import { convertAndFormatPrice } from './utils/currency';
 import { productsApi } from './lib/api/products';
 import { ordersApi } from './lib/api/orders';
@@ -25,6 +26,7 @@ import { bankAccountsApi } from './lib/api/bankAccounts';
 import { expensesApi } from './lib/api/expenses';
 import { cashSessionApi } from './lib/api/cashSession';
 import { socialsApi } from './lib/api/socials';
+import { skinTypesApi } from './lib/api/skinTypes';
 
 const DEFAULT_PROMOTIONS: PromotionBundle[] = [];
 const DEFAULT_COMBOS: Combo[] = [];
@@ -58,7 +60,7 @@ export default function App() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState<boolean>(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [selectedCountryCode, setSelectedCountryCode] = useState<string>('MX');
+  const [selectedCountryCode, setSelectedCountryCode] = useState<string>('DO');
   
   // Checkout & Order completion context
   const [orderSuccessInfo, setOrderSuccessInfo] = useState<{
@@ -78,6 +80,7 @@ export default function App() {
   const [promotionsArr, setPromotionsArr] = useState<PromotionBundle[]>(DEFAULT_PROMOTIONS);
   const [combosArr, setCombosArr] = useState<Combo[]>(DEFAULT_COMBOS);
   const [carouselArr, setCarouselArr] = useState<CarouselBanner[]>(DEFAULT_CAROUSEL);
+  const [skinTypesArr, setSkinTypesArr] = useState<string[]>(Object.values(SkinType));
   const [ordersArr, setOrdersArr] = useState<Order[]>(DEFAULT_ORDERS);
   const [expensesArr, setExpensesArr] = useState<Expense[]>(DEFAULT_EXPENSES);
   const [shippingSettings, setShippingSettings] = useState<ShippingSettings>(DEFAULT_SHIPPING);
@@ -90,11 +93,12 @@ export default function App() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [products, promotions, combos, carousel, orders, expenses, cashSession, socials, shipping, bank] = await Promise.all([
+        const [products, promotions, combos, carousel, skinTypes, orders, expenses, cashSession, socials, shipping, bank] = await Promise.all([
           productsApi.getAll().catch(() => PRODUCTS),
           promotionsApi.getAll().catch(() => DEFAULT_PROMOTIONS),
           combosApi.getAll().catch(() => DEFAULT_COMBOS),
           carouselApi.getAll().catch(() => DEFAULT_CAROUSEL),
+          skinTypesApi.getAll().catch(() => Object.values(SkinType)),
           ordersApi.getAll().catch(() => DEFAULT_ORDERS),
           expensesApi.getAll().catch(() => DEFAULT_EXPENSES),
           cashSessionApi.getCurrent().catch(() => DEFAULT_SESSION),
@@ -107,6 +111,7 @@ export default function App() {
         setPromotionsArr(promotions);
         setCombosArr(combos);
         setCarouselArr(carousel);
+        setSkinTypesArr(skinTypes);
         setOrdersArr(orders);
         setExpensesArr(expenses);
         setShippingSettings(shipping || DEFAULT_SHIPPING);
@@ -354,6 +359,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#FAF8F5] flex flex-col justify-between selection:bg-[#C5A880]/30 selection:text-[#2A2621]">
+      <FallingPetals />
       
       {/* 1. Brand Header */}
       <Header
@@ -398,6 +404,7 @@ export default function App() {
                 carouselBanners={carouselArr}
                 shippingSettings={shippingSettings}
                 bankAccount={bankAccount}
+                skinTypes={skinTypesArr}
                 onAddBundleToCart={handleAddBundleToCart}
               />
             )}

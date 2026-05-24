@@ -18,9 +18,9 @@ export const bankAccountsApi = {
 
     return {
       id: data.id,
-      bankType: data.bank_type,
+      bankType: data.bankType,
       beneficiary: data.beneficiary,
-      accountNumber: data.account_number,
+      accountNumber: data.accountNumber,
       clabe: data.clabe,
       active: data.active
     } as BankAccount;
@@ -29,9 +29,9 @@ export const bankAccountsApi = {
   async upsert(account: BankAccount): Promise<BankAccount> {
     const dbAccount = {
       id: 'default',
-      bank_type: account.bankType,
+      bankType: account.bankType,
       beneficiary: account.beneficiary,
-      account_number: account.accountNumber,
+      accountNumber: account.accountNumber,
       clabe: account.clabe,
       active: account.active ?? true
     };
@@ -49,9 +49,9 @@ export const bankAccountsApi = {
 
     return {
       id: data.id,
-      bankType: data.bank_type,
+      bankType: data.bankType,
       beneficiary: data.beneficiary,
-      accountNumber: data.account_number,
+      accountNumber: data.accountNumber,
       clabe: data.clabe,
       active: data.active
     } as BankAccount;

@@ -111,6 +111,7 @@ export interface Combo {
   image: string;
   tag?: string;
   active?: boolean;
+  category?: string;
 }
 
 export interface CarouselBanner {

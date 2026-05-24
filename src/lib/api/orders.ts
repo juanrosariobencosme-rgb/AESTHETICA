@@ -13,9 +13,9 @@ export const ordersApi = {
     // Transform snake_case to camelCase
     return data.map(order => ({
       id: order.id,
-      customerName: order.customer_name,
-      customerEmail: order.customer_email,
-      paymentMethod: order.payment_method,
+      customerName: order.customerName,
+      customerEmail: order.customerEmail,
+      paymentMethod: order.paymentMethod,
       items: order.items,
       subtotal: order.subtotal,
       tax: order.tax,
@@ -41,9 +41,9 @@ export const ordersApi = {
     // Transform snake_case to camelCase
     return {
       id: data.id,
-      customerName: data.customer_name,
-      customerEmail: data.customer_email,
-      paymentMethod: data.payment_method,
+      customerName: data.customerName,
+      customerEmail: data.customerEmail,
+      paymentMethod: data.paymentMethod,
       items: data.items,
       subtotal: data.subtotal,
       tax: data.tax,
@@ -59,9 +59,9 @@ export const ordersApi = {
     // Transform camelCase to snake_case
     const dbOrder = {
       id: order.id,
-      customer_name: order.customerName,
-      customer_email: order.customerEmail,
-      payment_method: order.paymentMethod,
+      customerName: order.customerName,
+      customerEmail: order.customerEmail,
+      paymentMethod: order.paymentMethod,
       items: order.items,
       subtotal: order.subtotal,
       tax: order.tax,
@@ -83,9 +83,9 @@ export const ordersApi = {
     // Transform back to camelCase
     return {
       id: data.id,
-      customerName: data.customer_name,
-      customerEmail: data.customer_email,
-      paymentMethod: data.payment_method,
+      customerName: data.customerName,
+      customerEmail: data.customerEmail,
+      paymentMethod: data.paymentMethod,
       items: data.items,
       subtotal: data.subtotal,
       tax: data.tax,
@@ -100,9 +100,9 @@ export const ordersApi = {
   async update(id: string, order: Partial<Order>): Promise<Order> {
     // Transform camelCase to snake_case
     const dbOrder: any = {};
-    if (order.customerName !== undefined) dbOrder.customer_name = order.customerName;
-    if (order.customerEmail !== undefined) dbOrder.customer_email = order.customerEmail;
-    if (order.paymentMethod !== undefined) dbOrder.payment_method = order.paymentMethod;
+    if (order.customerName !== undefined) dbOrder.customerName = order.customerName;
+    if (order.customerEmail !== undefined) dbOrder.customerEmail = order.customerEmail;
+    if (order.paymentMethod !== undefined) dbOrder.paymentMethod = order.paymentMethod;
     if (order.items !== undefined) dbOrder.items = order.items;
     if (order.subtotal !== undefined) dbOrder.subtotal = order.subtotal;
     if (order.tax !== undefined) dbOrder.tax = order.tax;
@@ -124,9 +124,9 @@ export const ordersApi = {
     // Transform back to camelCase
     return {
       id: data.id,
-      customerName: data.customer_name,
-      customerEmail: data.customer_email,
-      paymentMethod: data.payment_method,
+      customerName: data.customerName,
+      customerEmail: data.customerEmail,
+      paymentMethod: data.paymentMethod,
       items: data.items,
       subtotal: data.subtotal,
       tax: data.tax,
@@ -160,9 +160,9 @@ export const ordersApi = {
     // Transform back to camelCase
     return {
       id: data.id,
-      customerName: data.customer_name,
-      customerEmail: data.customer_email,
-      paymentMethod: data.payment_method,
+      customerName: data.customerName,
+      customerEmail: data.customerEmail,
+      paymentMethod: data.paymentMethod,
       items: data.items,
       subtotal: data.subtotal,
       tax: data.tax,

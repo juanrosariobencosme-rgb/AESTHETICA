@@ -325,14 +325,14 @@ export const TESTIMONIALS: Testimonial[] = [
     id: 'testimonial-1',
     quote: 'Lumière Dorée ha redibujado por completo la firmeza de mi piel. El tono apagado que solía tener por las mañanas ha sido reemplazado por un halo de luz natural que parece emanar desde el interior.',
     author: 'Isabella V.',
-    role: 'Coleccionista de Arte, CDMX',
+    role: 'Coleccionista de Arte, Santo Domingo',
     glowResult: 'Luminosidad y Definición Restaurada'
   },
   {
     id: 'testimonial-2',
     quote: 'El consuelo que Aurum Velvet le da a mi piel sensible es indescriptible. Cruza la línea de un simple cosmético; se siente como una terapia de seda reconstructora que calma y esculpe mi rostro.',
     author: 'Montserrat H.',
-    role: 'Diseñadora de Interiores, Guadalajara',
+    role: 'Diseñadora de Interiores, Santiago',
     glowResult: 'Barrera Cutánea Fortalecida'
   },
   {

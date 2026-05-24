@@ -16,12 +16,13 @@ CREATE TABLE IF NOT EXISTS products (
   concern TEXT NOT NULL,
   rating DECIMAL(3, 1) NOT NULL,
   texture TEXT NOT NULL,
+  stock INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Promotion Bundles table
-CREATE TABLE IF NOT EXISTS promotion_bundles (
+CREATE TABLE IF NOT EXISTS promotions (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
   subtitle TEXT NOT NULL,
@@ -58,6 +59,7 @@ CREATE TABLE IF NOT EXISTS combos (
   image TEXT NOT NULL,
   tag TEXT,
   active BOOLEAN NOT NULL DEFAULT TRUE,
+  category TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -202,7 +204,7 @@ ON CONFLICT (id) DO NOTHING;
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
-ALTER TABLE promotion_bundles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE promotions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cash_sessions ENABLE ROW LEVEL SECURITY;
@@ -219,8 +221,8 @@ CREATE POLICY "Allow public read access to products"
   TO public
   USING (true);
 
-CREATE POLICY "Allow public read access to promotion_bundles"
-  ON promotion_bundles FOR SELECT
+CREATE POLICY "Allow public read access to promotions"
+  ON promotions FOR SELECT
   TO public
   USING (true);
 
@@ -256,8 +258,8 @@ CREATE POLICY "Allow all operations on products"
   USING (true)
   WITH CHECK (true);
 
-CREATE POLICY "Allow all operations on promotion_bundles"
-  ON promotion_bundles FOR ALL
+CREATE POLICY "Allow all operations on promotions"
+  ON promotions FOR ALL
   TO public
   USING (true)
   WITH CHECK (true);
@@ -331,8 +333,8 @@ CREATE TRIGGER update_products_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_promotion_bundles_updated_at
-  BEFORE UPDATE ON promotion_bundles
+CREATE TRIGGER update_promotions_updated_at
+  BEFORE UPDATE ON promotions
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 

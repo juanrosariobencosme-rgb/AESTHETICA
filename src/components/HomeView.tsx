@@ -18,7 +18,7 @@ interface HomeViewProps {
 export default function HomeView({ 
   onExploreCollection, 
   onViewProductDetails,
-  selectedCountryCode = 'MX',
+  selectedCountryCode = 'DO',
   products = PRODUCTS,
   promotionBundles = [],
   carouselBanners = [],

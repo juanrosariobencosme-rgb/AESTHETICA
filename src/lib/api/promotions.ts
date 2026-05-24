@@ -5,23 +5,23 @@ export const promotionsApi = {
   async getAll(): Promise<PromotionBundle[]> {
     try {
       const { data, error } = await supabase
-        .from('promotion_bundles')
+        .from('promotions')
         .select('*')
         .order('created_at', { ascending: false });
-      
+
       if (error) {
         console.error('Error fetching promotions:', error);
         throw error;
       }
-      
+
       return data.map(promo => ({
         id: promo.id,
         title: promo.title,
         subtitle: promo.subtitle,
         description: promo.description,
-        productIds: promo.product_ids,
+        productIds: promo.productIds,
         price: promo.price,
-        valuePrice: promo.value_price,
+        valuePrice: promo.valuePrice,
         image: promo.image,
         tag: promo.tag
       })) as PromotionBundle[];
@@ -34,26 +34,26 @@ export const promotionsApi = {
   async getById(id: string): Promise<PromotionBundle | null> {
     try {
       const { data, error } = await supabase
-        .from('promotion_bundles')
+        .from('promotions')
         .select('*')
         .eq('id', id)
         .single();
-      
+
       if (error) {
         console.error('Error fetching promotion by id:', error);
         throw error;
       }
-      
+
       if (!data) return null;
-      
+
       return {
         id: data.id,
         title: data.title,
         subtitle: data.subtitle,
         description: data.description,
-        productIds: data.product_ids,
+        productIds: data.productIds,
         price: data.price,
-        valuePrice: data.value_price,
+        valuePrice: data.valuePrice,
         image: data.image,
         tag: data.tag
       } as PromotionBundle;
@@ -70,36 +70,36 @@ export const promotionsApi = {
         title: promotion.title,
         subtitle: promotion.subtitle,
         description: promotion.description,
-        product_ids: promotion.productIds,
+        productIds: promotion.productIds,
         price: promotion.price,
-        value_price: promotion.valuePrice,
+        valuePrice: promotion.valuePrice,
         image: promotion.image,
         tag: promotion.tag
       };
-      
+
       console.log('Creating promotion:', dbPromotion);
-      
+
       const { data, error } = await supabase
-        .from('promotion_bundles')
+        .from('promotions')
         .insert(dbPromotion)
         .select()
         .single();
-      
+
       if (error) {
         console.error('Error creating promotion:', error);
         throw error;
       }
-      
+
       console.log('Promotion created successfully');
-      
+
       return {
         id: data.id,
         title: data.title,
         subtitle: data.subtitle,
         description: data.description,
-        productIds: data.product_ids,
+        productIds: data.productIds,
         price: data.price,
-        valuePrice: data.value_price,
+        valuePrice: data.valuePrice,
         image: data.image,
         tag: data.tag
       } as PromotionBundle;
@@ -114,7 +114,7 @@ export const promotionsApi = {
       console.log('Deleting promotion:', id);
       
       const { error } = await supabase
-        .from('promotion_bundles')
+        .from('promotions')
         .delete()
         .eq('id', id);
       
@@ -133,39 +133,39 @@ export const promotionsApi = {
   async upsert(promotions: PromotionBundle[]): Promise<PromotionBundle[]> {
     try {
       console.log('Upserting promotions:', promotions.length);
-      
+
       const dbPromotions = promotions.map(promo => ({
         id: promo.id,
         title: promo.title,
         subtitle: promo.subtitle,
         description: promo.description,
-        product_ids: promo.productIds,
+        productIds: promo.productIds,
         price: promo.price,
-        value_price: promo.valuePrice,
+        valuePrice: promo.valuePrice,
         image: promo.image,
         tag: promo.tag
       }));
-      
+
       const { data, error } = await supabase
-        .from('promotion_bundles')
+        .from('promotions')
         .upsert(dbPromotions, { onConflict: 'id' })
         .select();
-      
+
       if (error) {
         console.error('Error upserting promotions:', error);
         throw error;
       }
-      
+
       console.log('Promotions upserted successfully');
-      
+
       return data.map(promo => ({
         id: promo.id,
         title: promo.title,
         subtitle: promo.subtitle,
         description: promo.description,
-        productIds: promo.product_ids,
+        productIds: promo.productIds,
         price: promo.price,
-        valuePrice: promo.value_price,
+        valuePrice: promo.valuePrice,
         image: promo.image,
         tag: promo.tag
       })) as PromotionBundle[];

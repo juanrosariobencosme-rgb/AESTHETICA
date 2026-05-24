@@ -15,7 +15,7 @@ interface OrderSuccessViewProps {
 export default function OrderSuccessView({ 
   orderInfo, 
   onReturnHome,
-  selectedCountryCode = 'MX',
+  selectedCountryCode = 'DO',
   whatsAppPhone = '18294855693'
 }: OrderSuccessViewProps) {
   const [copied, setCopied] = useState(false);

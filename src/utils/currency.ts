@@ -9,10 +9,6 @@ export interface CountryOption {
 
 export const COUNTRIES: CountryOption[] = [
   { code: 'US', name: 'USA', currency: 'USD', symbol: '$', rate: 1.0, flag: '🇺🇸' },
-  { code: 'MX', name: 'México', currency: 'MXN', symbol: '$', rate: 18.0, flag: '🇲🇽' },
-  { code: 'ES', name: 'España', currency: 'EUR', symbol: '€', rate: 0.92, flag: '🇪🇸' },
-  { code: 'CO', name: 'Colombia', currency: 'COP', symbol: '$', rate: 4200, flag: '🇨🇴' },
-  { code: 'CL', name: 'Chile', currency: 'CLP', symbol: '$', rate: 930, flag: '🇨🇱' },
   { code: 'DO', name: 'República Dominicana', currency: 'DOP', symbol: 'RD$', rate: 59.20, flag: '🇩🇴' }
 ];
 

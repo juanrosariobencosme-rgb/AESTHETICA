@@ -18,18 +18,18 @@ export const shippingApi = {
 
     return {
       id: data.id,
-      districtRate: Number(data.district_rate),
-      outsideRate: Number(data.outside_rate),
-      districtKeywords: data.district_keywords || []
+      districtRate: Number(data.districtRate),
+      outsideRate: Number(data.outsideRate),
+      districtKeywords: data.districtKeywords || []
     } as ShippingSettings;
   },
 
   async upsert(settings: ShippingSettings): Promise<ShippingSettings> {
     const dbSettings = {
       id: 'default',
-      district_rate: settings.districtRate,
-      outside_rate: settings.outsideRate,
-      district_keywords: settings.districtKeywords
+      districtRate: settings.districtRate,
+      outsideRate: settings.outsideRate,
+      districtKeywords: settings.districtKeywords
     };
 
     const { data, error } = await supabase
@@ -45,9 +45,9 @@ export const shippingApi = {
 
     return {
       id: data.id,
-      districtRate: Number(data.district_rate),
-      outsideRate: Number(data.outside_rate),
-      districtKeywords: data.district_keywords || []
+      districtRate: Number(data.districtRate),
+      outsideRate: Number(data.outsideRate),
+      districtKeywords: data.districtKeywords || []
     } as ShippingSettings;
   }
 };

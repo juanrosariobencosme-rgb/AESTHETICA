@@ -1,16 +1,18 @@
-import { useState, useMemo, FormEvent } from 'react';
+import { useState, useMemo, useEffect, FormEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   TrendingUp, Plus, Trash2, Edit3, Save, Download, Search, Settings, 
   DollarSign, Users, ShoppingBag, Tag, Calculator, FileText, X, Check, 
   CheckCircle2, Lock, Unlock, Calendar, ArrowDownRight, ArrowUpRight, 
-  Info, AlertTriangle, Printer, HelpCircle 
+  Info, AlertTriangle, Printer, HelpCircle, Layers, Truck, MapPin, Banknote 
 } from 'lucide-react';
 import { Product, Order, Expense, CashSession, PromotionBundle, SocialConfig, Combo, CarouselBanner, ShippingSettings, BankAccount } from '../types';
 import { convertAndFormatPrice } from '../utils/currency';
 import { productsApi } from '../lib/api/products';
 import { ordersApi } from '../lib/api/orders';
 import { promotionsApi } from '../lib/api/promotions';
+import { combosApi } from '../lib/api/combos';
+import { carouselApi } from '../lib/api/carousel';
 import { expensesApi } from '../lib/api/expenses';
 import { cashSessionApi } from '../lib/api/cashSession';
 import { socialsApi } from '../lib/api/socials';
@@ -112,6 +114,49 @@ export default function AdminPanel({
   const [newPromoImage, setNewPromoImage] = useState('https://images.unsplash.com/photo-1617897903246-719242758050?q=80&w=1000');
   const [newPromoTag, setNewPromoTag] = useState('Edición Limitada');
   const [newPromoProdIds, setNewPromoProdIds] = useState<string[]>([]);
+
+  const [creatingCombo, setCreatingCombo] = useState(false);
+  const [newComboTitle, setNewComboTitle] = useState('');
+  const [newComboSubtitle, setNewComboSubtitle] = useState('');
+  const [newComboDesc, setNewComboDesc] = useState('');
+  const [newComboPrice, setNewComboPrice] = useState(180);
+  const [newComboVal, setNewComboVal] = useState(260);
+  const [newComboImage, setNewComboImage] = useState('https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=1000');
+  const [newComboTag, setNewComboTag] = useState('Combo Especial');
+  const [newComboProdIds, setNewComboProdIds] = useState<string[]>([]);
+
+  const [creatingBanner, setCreatingBanner] = useState(false);
+  const [newBannerTitle, setNewBannerTitle] = useState('Despierta tu ritual');
+  const [newBannerDescription, setNewBannerDescription] = useState('Campaña destacada para el diagnóstico de piel luminosa.');
+  const [newBannerImage, setNewBannerImage] = useState('https://images.unsplash.com/photo-1501004318641-b39e6451bec6?q=80&w=1200');
+  const [newBannerButtonText, setNewBannerButtonText] = useState('Ver colección');
+  const [newBannerButtonUrl, setNewBannerButtonUrl] = useState('/catalog');
+  const [newBannerPriority, setNewBannerPriority] = useState(1);
+  const [newBannerActive, setNewBannerActive] = useState(true);
+
+  const [shippingDistrictRate, setShippingDistrictRate] = useState(shippingSettings.districtRate);
+  const [shippingOutsideRate, setShippingOutsideRate] = useState(shippingSettings.outsideRate);
+  const [shippingKeywordsText, setShippingKeywordsText] = useState(shippingSettings.districtKeywords.join(', '));
+
+  const [bankTypeValue, setBankTypeValue] = useState(bankAccount.bankType);
+  const [bankBeneficiary, setBankBeneficiary] = useState(bankAccount.beneficiary);
+  const [bankAccountNumber, setBankAccountNumber] = useState(bankAccount.accountNumber);
+  const [bankClabeNumber, setBankClabeNumber] = useState(bankAccount.clabe ?? '');
+  const [bankActiveStatus, setBankActiveStatus] = useState(bankAccount.active ?? true);
+
+  useEffect(() => {
+    setShippingDistrictRate(shippingSettings.districtRate);
+    setShippingOutsideRate(shippingSettings.outsideRate);
+    setShippingKeywordsText(shippingSettings.districtKeywords.join(', '));
+  }, [shippingSettings]);
+
+  useEffect(() => {
+    setBankTypeValue(bankAccount.bankType);
+    setBankBeneficiary(bankAccount.beneficiary);
+    setBankAccountNumber(bankAccount.accountNumber);
+    setBankClabeNumber(bankAccount.clabe ?? '');
+    setBankActiveStatus(bankAccount.active ?? true);
+  }, [bankAccount]);
 
   // New Expense state
   const [expenseTitle, setExpenseTitle] = useState('');
@@ -397,6 +442,147 @@ export default function AdminPanel({
     }
   };
 
+  const handleToggleComboProductId = (id: string) => {
+    setNewComboProdIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const handleCreateCombo = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!newComboTitle || newComboPrice <= 0 || newComboProdIds.length === 0) {
+      showFeedback('Por favor introduce título, precio y al menos un producto para el combo.', true);
+      return;
+    }
+
+    const newCombo = {
+      id: `combo-${Date.now()}`,
+      title: newComboTitle,
+      subtitle: newComboSubtitle,
+      description: newComboDesc,
+      productIds: newComboProdIds,
+      price: Number(newComboPrice),
+      valuePrice: Number(newComboVal),
+      image: newComboImage,
+      tag: newComboTag,
+      active: true
+    };
+
+    try {
+      await combosApi.create(newCombo);
+      await setCombos([newCombo, ...combos]);
+      setNewComboTitle('');
+      setNewComboSubtitle('');
+      setNewComboDesc('');
+      setNewComboPrice(180);
+      setNewComboVal(260);
+      setNewComboImage('https://images.unsplash.com/photo-1512436991641-6745cdb1723f?q=80&w=1000');
+      setNewComboTag('Combo Especial');
+      setNewComboProdIds([]);
+      setCreatingCombo(false);
+      showFeedback(`Combo "${newCombo.title}" creado.`);
+    } catch (error) {
+      console.error('Error creating combo:', error);
+      showFeedback('Error al crear combo en Supabase', true);
+    }
+  };
+
+  const handleDeleteCombo = async (id: string) => {
+    if (confirm('¿Eliminar este combo permanentemente?')) {
+      try {
+        await combosApi.delete(id);
+        setCombos(combos.filter(combo => combo.id !== id));
+        showFeedback('Combo eliminado.');
+      } catch (error) {
+        console.error('Error deleting combo:', error);
+        showFeedback('Error al eliminar combo en Supabase', true);
+      }
+    }
+  };
+
+  const handleCreateBanner = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!newBannerTitle || !newBannerImage) {
+      showFeedback('Por favor completa el título y la imagen del banner.', true);
+      return;
+    }
+
+    const banner = {
+      id: `banner-${Date.now()}`,
+      title: newBannerTitle,
+      description: newBannerDescription,
+      image: newBannerImage,
+      buttonText: newBannerButtonText,
+      buttonUrl: newBannerButtonUrl,
+      priority: Number(newBannerPriority),
+      active: newBannerActive
+    };
+
+    try {
+      await carouselApi.create(banner);
+      await setCarousel([banner, ...carousel]);
+      setNewBannerTitle('Despierta tu ritual');
+      setNewBannerDescription('Campaña destacada para el diagnóstico de piel luminosa.');
+      setNewBannerImage('https://images.unsplash.com/photo-1501004318641-b39e6451bec6?q=80&w=1200');
+      setNewBannerButtonText('Ver colección');
+      setNewBannerButtonUrl('/catalog');
+      setNewBannerPriority(1);
+      setNewBannerActive(true);
+      setCreatingBanner(false);
+      showFeedback('Banner de carrusel guardado con éxito.');
+    } catch (error) {
+      console.error('Error creating carousel banner:', error);
+      showFeedback('Error al crear banner en Supabase', true);
+    }
+  };
+
+  const handleDeleteBanner = async (id: string) => {
+    if (confirm('¿Eliminar este banner del carrusel?')) {
+      try {
+        await carouselApi.delete(id);
+        setCarousel(carousel.filter(banner => banner.id !== id));
+        showFeedback('Banner eliminado del carrusel.');
+      } catch (error) {
+        console.error('Error deleting banner:', error);
+        showFeedback('Error al eliminar banner del carrusel en Supabase', true);
+      }
+    }
+  };
+
+  const handleSaveShippingSettings = async () => {
+    const updated = {
+      ...shippingSettings,
+      districtRate: Number(shippingDistrictRate),
+      outsideRate: Number(shippingOutsideRate),
+      districtKeywords: shippingKeywordsText.split(',').map((keyword) => keyword.trim()).filter(Boolean)
+    };
+
+    try {
+      await setShippingSettings(updated);
+      showFeedback('Configuración de envío actualizada.');
+    } catch (error) {
+      console.error('Error saving shipping settings:', error);
+      showFeedback('Error al guardar ajustes de envío en Supabase', true);
+    }
+  };
+
+  const handleSaveBankAccount = async () => {
+    const updated = {
+      ...bankAccount,
+      bankType: bankTypeValue,
+      beneficiary: bankBeneficiary,
+      accountNumber: bankAccountNumber,
+      clabe: bankClabeNumber,
+      active: bankActiveStatus
+    };
+
+    try {
+      await setBankAccount(updated);
+      showFeedback('Datos bancarios actualizados.');
+    } catch (error) {
+      console.error('Error saving bank account:', error);
+      showFeedback('Error al guardar datos bancarios en Supabase', true);
+    }
+  };
+
   // --- Expenses Actions ---
   const handleAddExpense = async (e: FormEvent) => {
     e.preventDefault();
@@ -620,6 +806,10 @@ export default function AdminPanel({
               { id: 'expenses', label: 'Egresos y Gastos', icon: DollarSign },
               { id: 'clients', label: 'Cartelera de Clientes', icon: Users },
               { id: 'promotions', label: 'Campañas Promociones', icon: Tag },
+              { id: 'combos', label: 'Combos', icon: Layers },
+              { id: 'carousel', label: 'Banners / Carousel', icon: Truck },
+              { id: 'shipping', label: 'Ajustes Envíos', icon: MapPin },
+              { id: 'bank', label: 'Datos Bancarios', icon: Banknote },
               { id: 'cashier', label: 'Caja y Cierre Diario', icon: Calculator },
               { id: 'socials', label: 'Ajustes Redes Sociales', icon: Settings },
             ].map(tab => {
@@ -1465,7 +1655,243 @@ export default function AdminPanel({
               </div>
             )}
 
-            {/* ====== SUB TIER 7: SISTEMA DE CAJA CHICA COMPLETO ====== */}
+            {/* ====== SUB TIER 7: COMBOS ====== */}
+            {activeSubTab === 'combos' && (
+              <div className="space-y-6 text-left">
+                <div className="flex justify-between items-center border-b border-[#EADCC9]/30 pb-4">
+                  <div>
+                    <h2 className="font-serif text-xl text-[#2A2621] tracking-tight">Combos</h2>
+                    <p className="text-[10px] text-[#7D7569] mt-0.5">Crea y gestiona combos de productos.</p>
+                  </div>
+                  <button
+                    onClick={() => setCreatingCombo(!creatingCombo)}
+                    className="bg-[#2A2621] text-white hover:bg-[#C5A880] px-4 py-2 text-[10px] tracking-widest font-bold uppercase transition-all flex items-center gap-1.5"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Nuevo Combo
+                  </button>
+                </div>
+
+                {creatingCombo && (
+                  <form onSubmit={handleCreateCombo} className="p-4 border border-stone-200 bg-stone-50/80 space-y-4 text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="font-bold text-stone-700 block mb-1">Título</label>
+                        <input value={newComboTitle} onChange={e => setNewComboTitle(e.target.value)} className="w-full p-2 border" />
+                      </div>
+                      <div>
+                        <label className="font-bold text-stone-700 block mb-1">Subtítulo</label>
+                        <input value={newComboSubtitle} onChange={e => setNewComboSubtitle(e.target.value)} className="w-full p-2 border" />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="font-bold text-stone-700 block mb-1">Descripción</label>
+                        <input value={newComboDesc} onChange={e => setNewComboDesc(e.target.value)} className="w-full p-2 border" />
+                      </div>
+                      <div>
+                        <label className="font-bold text-stone-700 block mb-1">Precio</label>
+                        <input type="number" value={newComboPrice} onChange={e => setNewComboPrice(Number(e.target.value))} className="w-full p-2 border" />
+                      </div>
+                      <div>
+                        <label className="font-bold text-stone-700 block mb-1">Valor</label>
+                        <input type="number" value={newComboVal} onChange={e => setNewComboVal(Number(e.target.value))} className="w-full p-2 border" />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="font-bold text-stone-700 block mb-1">Imagen URL</label>
+                        <input value={newComboImage} onChange={e => setNewComboImage(e.target.value)} className="w-full p-2 border" />
+                      </div>
+                      <div>
+                        <label className="font-bold text-stone-700 block mb-1">Tag</label>
+                        <input value={newComboTag} onChange={e => setNewComboTag(e.target.value)} className="w-full p-2 border" />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="font-bold text-stone-700 block mb-1">Productos</label>
+                        <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                          {products.map(p => {
+                            const isAssoc = newComboProdIds.includes(p.id);
+                            return (
+                              <button
+                                key={p.id}
+                                type="button"
+                                onClick={() => handleToggleComboProductId(p.id)}
+                                className={`p-2 border transition-all text-left flex items-center justify-between text-[11px] ${
+                                  isAssoc ? "bg-indigo-50 border-indigo-400 text-indigo-900" : "bg-stone-50/50 hover:bg-stone-100/50"
+                                }`}
+                              >
+                                <span>{p.name}</span>
+                                {isAssoc && <Check className="w-3.5 h-3.5 text-indigo-600" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                    <button type="submit" className="w-full py-3 bg-[#2A2621] hover:bg-stone-800 text-white font-bold text-[10px] tracking-widest uppercase">
+                      Guardar combo
+                    </button>
+                  </form>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {combos.map(combo => (
+                    <div key={combo.id} className="border border-[#EADCC9]/50 p-4 rounded bg-[#FAF8F5]/80">
+                      <div className="flex justify-between items-start gap-4 mb-3">
+                        <div>
+                          <h3 className="font-semibold text-stone-900">{combo.title}</h3>
+                          <p className="text-[10px] uppercase tracking-wider text-stone-500">{combo.tag}</p>
+                        </div>
+                        <button onClick={() => handleDeleteCombo(combo.id)} className="text-stone-400 hover:text-rose-600"><Trash2 className="w-4 h-4" /></button>
+                      </div>
+                      <p className="text-[11px] text-stone-700 leading-relaxed mb-3">{combo.subtitle}</p>
+                      <div className="grid grid-cols-2 gap-2 text-[11px] text-stone-600 mb-3">
+                        <div><strong>Precio:</strong> {convertAndFormatPrice(combo.price, selectedCountryCode)}</div>
+                        {combo.valuePrice && <div><strong>Valor:</strong> {convertAndFormatPrice(combo.valuePrice, selectedCountryCode)}</div>}
+                      </div>
+                      <img src={combo.image} alt={combo.title} className="w-full h-40 object-cover rounded border border-[#EADCC9]/30 mb-3" referrerPolicy="no-referrer" />
+                      <div className="text-[11px] text-stone-700">
+                        Productos: {combo.productIds.length}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ====== SUB TIER 8: CARRUSEL Y BANNERS ====== */}
+            {activeSubTab === 'carousel' && (
+              <div className="space-y-6 text-left">
+                <div className="flex justify-between items-center border-b border-[#EADCC9]/30 pb-4">
+                  <div>
+                    <h2 className="font-serif text-xl text-[#2A2621] tracking-tight">Carrusel y Banners</h2>
+                    <p className="text-[10px] text-[#7D7569] mt-0.5">Publica banners que aparecen en la página de inicio.</p>
+                  </div>
+                  <button
+                    onClick={() => setCreatingBanner(!creatingBanner)}
+                    className="bg-[#2A2621] text-white hover:bg-[#C5A880] px-4 py-2 text-[10px] tracking-widest font-bold uppercase transition-all flex items-center gap-1.5"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Nuevo Banner
+                  </button>
+                </div>
+
+                {creatingBanner && (
+                  <form onSubmit={handleCreateBanner} className="p-4 border border-stone-200 bg-stone-50/80 space-y-4 text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="font-bold text-stone-700 block mb-1">Título del Banner</label>
+                        <input value={newBannerTitle} onChange={e => setNewBannerTitle(e.target.value)} className="w-full p-2 border" />
+                      </div>
+                      <div>
+                        <label className="font-bold text-stone-700 block mb-1">Descripción</label>
+                        <input value={newBannerDescription} onChange={e => setNewBannerDescription(e.target.value)} className="w-full p-2 border" />
+                      </div>
+                      <div>
+                        <label className="font-bold text-stone-700 block mb-1">Imagen URL</label>
+                        <input value={newBannerImage} onChange={e => setNewBannerImage(e.target.value)} className="w-full p-2 border" />
+                      </div>
+                      <div>
+                        <label className="font-bold text-stone-700 block mb-1">Texto del botón</label>
+                        <input value={newBannerButtonText} onChange={e => setNewBannerButtonText(e.target.value)} className="w-full p-2 border" />
+                      </div>
+                      <div>
+                        <label className="font-bold text-stone-700 block mb-1">URL destino</label>
+                        <input value={newBannerButtonUrl} onChange={e => setNewBannerButtonUrl(e.target.value)} className="w-full p-2 border" />
+                      </div>
+                      <div>
+                        <label className="font-bold text-stone-700 block mb-1">Prioridad</label>
+                        <input type="number" value={newBannerPriority} onChange={e => setNewBannerPriority(Number(e.target.value))} className="w-full p-2 border" />
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <input id="banner-active" type="checkbox" checked={newBannerActive} onChange={() => setNewBannerActive(!newBannerActive)} className="h-4 w-4 text-[#2A2621] border-[#EADCC9] rounded" />
+                        <label htmlFor="banner-active" className="text-xs text-stone-700">Activo</label>
+                      </div>
+                    </div>
+                    <button type="submit" className="w-full py-3 bg-[#2A2621] hover:bg-stone-800 text-white font-bold uppercase tracking-widest text-[10px]">Guardar banner</button>
+                  </form>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {carousel.map(banner => (
+                    <div key={banner.id} className="border border-[#EADCC9]/50 p-4 rounded bg-[#FAF8F5]/80">
+                      <div className="flex justify-between items-start gap-4 mb-3">
+                        <div>
+                          <h3 className="font-semibold text-stone-900">{banner.title}</h3>
+                          <p className="text-[10px] text-stone-500">Prioridad {banner.priority}</p>
+                        </div>
+                        <button onClick={() => handleDeleteBanner(banner.id)} className="text-stone-400 hover:text-rose-600"><Trash2 className="w-4 h-4" /></button>
+                      </div>
+                      <img src={banner.image} alt={banner.title} className="w-full h-40 object-cover rounded border border-[#EADCC9]/30 mb-3" referrerPolicy="no-referrer" />
+                      <p className="text-[11px] text-stone-700 mb-2">{banner.description}</p>
+                      <p className="text-[11px] font-bold">{banner.buttonText}</p>
+                      <div className="text-[10px] mt-2 text-stone-500">{banner.active ? 'Activo' : 'Inactivo'}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ====== SUB TIER 9: AJUSTES DE ENVÍO ====== */}
+            {activeSubTab === 'shipping' && (
+              <div className="space-y-6 text-left">
+                <div className="flex justify-between items-center border-b border-[#EADCC9]/30 pb-4">
+                  <div>
+                    <h2 className="font-serif text-xl text-[#2A2621] tracking-tight">Ajustes de Envío</h2>
+                    <p className="text-[10px] text-[#7D7569] mt-0.5">Configura tarifas para Distrito y fuera de Distrito, y palabras clave de detección.</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] uppercase tracking-widest text-stone-700 font-bold block mb-2">Tarifa Distrito</label>
+                    <input type="number" value={shippingDistrictRate} onChange={e => setShippingDistrictRate(Number(e.target.value))} className="w-full p-3 border" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] uppercase tracking-widest text-stone-700 font-bold block mb-2">Tarifa Fuera del Distrito</label>
+                    <input type="number" value={shippingOutsideRate} onChange={e => setShippingOutsideRate(Number(e.target.value))} className="w-full p-3 border" />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="text-[10px] uppercase tracking-widest text-stone-700 font-bold block mb-2">Palabras clave para Distrito</label>
+                    <input value={shippingKeywordsText} onChange={e => setShippingKeywordsText(e.target.value)} className="w-full p-3 border" placeholder="Distrito, Santo Domingo, DN" />
+                  </div>
+                </div>
+                <button onClick={handleSaveShippingSettings} className="py-3 px-4 bg-[#2A2621] hover:bg-[#C5A880] text-white uppercase tracking-widest text-[10px] font-bold">Guardar ajustes de envío</button>
+              </div>
+            )}
+
+            {/* ====== SUB TIER 10: DATOS BANCARIOS ====== */}
+            {activeSubTab === 'bank' && (
+              <div className="space-y-6 text-left">
+                <div className="flex justify-between items-center border-b border-[#EADCC9]/30 pb-4">
+                  <div>
+                    <h2 className="font-serif text-xl text-[#2A2621] tracking-tight">Cuenta Bancaria</h2>
+                    <p className="text-[10px] text-[#7D7569] mt-0.5">Configura el beneficiario y los datos bancarios que se muestran en checkout.</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] uppercase tracking-widest text-stone-700 font-bold block mb-2">Banco</label>
+                    <input value={bankTypeValue} onChange={e => setBankTypeValue(e.target.value)} className="w-full p-3 border" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] uppercase tracking-widest text-stone-700 font-bold block mb-2">Beneficiario</label>
+                    <input value={bankBeneficiary} onChange={e => setBankBeneficiary(e.target.value)} className="w-full p-3 border" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] uppercase tracking-widest text-stone-700 font-bold block mb-2">Número de cuenta</label>
+                    <input value={bankAccountNumber} onChange={e => setBankAccountNumber(e.target.value)} className="w-full p-3 border" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] uppercase tracking-widest text-stone-700 font-bold block mb-2">CLABE</label>
+                    <input value={bankClabeNumber} onChange={e => setBankClabeNumber(e.target.value)} className="w-full p-3 border" />
+                  </div>
+                  <div className="sm:col-span-2 flex items-center gap-3">
+                    <input id="bank-active" type="checkbox" checked={bankActiveStatus} onChange={() => setBankActiveStatus(!bankActiveStatus)} className="h-4 w-4 text-[#2A2621] border-[#EADCC9] rounded" />
+                    <label htmlFor="bank-active" className="text-xs text-stone-700">Cuenta activa en checkout</label>
+                  </div>
+                </div>
+                <button onClick={handleSaveBankAccount} className="py-3 px-4 bg-[#2A2621] hover:bg-[#C5A880] text-white uppercase tracking-widest text-[10px] font-bold">Guardar datos bancarios</button>
+              </div>
+            )}
+
+            {/* ====== SUB TIER 11: SISTEMA DE CAJA CHICA COMPLETO ====== */}
             {activeSubTab === 'cashier' && (
               <div className="space-y-6 text-left">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-[#EADCC9]/30 pb-4">

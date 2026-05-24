@@ -30,7 +30,7 @@ export default function CheckoutView({
   bankAccount,
   onOrderComplete, 
   onBackToCatalog,
-  selectedCountryCode = 'MX'
+  selectedCountryCode = 'DO'
 }: CheckoutViewProps) {
   // Form fields
   const [fullName, setFullName] = useState('');
@@ -41,11 +41,14 @@ export default function CheckoutView({
   const [paymentMethod, setPaymentMethod] = useState<'cod' | 'transfer'>('cod');
   const [voucherFile, setVoucherFile] = useState<File | null>(null);
 
-  const districtKeywords = /(distrito|santo domingo|distrito nacional|dn)/i;
-  const shippingZone = districtKeywords.test(`${address} ${city}`) ? 'Distrito' : 'Fuera del Distrito';
+  const districtKeywordList = shippingSettings?.districtKeywords?.length
+    ? shippingSettings.districtKeywords
+    : ['Distrito', 'Santo Domingo', 'Distrito Nacional', 'DN'];
+  const districtPattern = new RegExp(districtKeywordList.join('|'), 'i');
+  const shippingZone = districtPattern.test(`${address} ${city}`) ? 'Distrito' : 'Fuera del Distrito';
   const shippingCost = shippingZone === 'Distrito'
-    ? shippingSettings?.districtRate ?? 200
-    : shippingSettings?.outsideRate ?? 350;
+    ? (shippingSettings?.districtRate ?? 200)
+    : (shippingSettings?.outsideRate ?? 350);
   const taxRate = 0.18;
   const subtotal = total;
   const tax = Math.round(subtotal * taxRate);
@@ -87,18 +90,18 @@ export default function CheckoutView({
             </button>
           </div>
         ) : (
-          <form onSubmit={handlePlaceOrder} className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 lg:gap-16 items-start">
+          <form onSubmit={handlePlaceOrder} className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 items-start">
             
             {/* Left Column: Forms */}
-            <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-8 sm:gap-12 lg:gap-16 text-left">
+            <div className="lg:col-span-7 flex flex-col gap-8 text-left">
               
               {/* Personal Information */}
               <section>
-                <header className="mb-6 sm:mb-10">
-                  <h2 className="font-serif text-xl sm:text-2xl text-on-surface mb-2 font-light">Información Personal</h2>
+                <header className="mb-6">
+                  <h2 className="font-serif text-xl text-on-surface mb-2 font-light">Información Personal</h2>
                   <p className="text-xs text-on-surface-variant">Detalles para contactarte sobre tu orden.</p>
                 </header>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 sm:gap-x-8 gap-y-8 sm:gap-y-10">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-6">
                   <div className="flex flex-col">
                     <label className="text-[10px] uppercase tracking-[0.15em] font-semibold text-outline mb-2" htmlFor="fullName">
                       Nombre Completo
@@ -132,11 +135,11 @@ export default function CheckoutView({
 
               {/* Shipping Address */}
               <section>
-                <header className="mb-10">
+                <header className="mb-6">
                   <h2 className="font-serif text-2xl text-on-surface mb-2 font-light">Dirección de Envío</h2>
                   <p className="text-xs text-on-surface-variant">Asegure la precisión del domicilio para resguardo exprés.</p>
                 </header>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-10">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
                   <div className="flex flex-col md:col-span-2">
                     <label className="text-[10px] uppercase tracking-[0.15em] font-semibold text-outline mb-2" htmlFor="address">
                       Dirección Completa
@@ -160,7 +163,7 @@ export default function CheckoutView({
                       id="city"
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
-                      placeholder="Ciudad de México"
+                      placeholder="Santo Domingo"
                       type="text"
                       className="w-full bg-transparent border-0 border-b border-outline-variant py-2 px-0 text-sm font-sans text-on-surface focus:ring-0 focus:border-primary focus:outline-none transition-colors"
                     />
@@ -184,7 +187,7 @@ export default function CheckoutView({
 
               {/* Payment Method */}
               <section>
-                <header className="mb-10">
+                <header className="mb-6">
                   <h2 className="font-serif text-2xl text-on-surface mb-2 font-light">Método de Pago</h2>
                   <p className="text-xs text-on-surface-variant">Selecciona cómo prefieres liquidar tu ritual.</p>
                 </header>
@@ -232,7 +235,7 @@ export default function CheckoutView({
                     <div className="flex-grow">
                       <h3 className="text-[11px] font-semibold tracking-wider text-on-surface uppercase mb-1">Transferencia Bancaria</h3>
                       <p className="text-xs text-on-surface-variant max-w-lg leading-relaxed font-light">
-                        Realiza tu pago vía SPEI. Te proporcionaremos las instrucciones al finalizar.
+                        Realiza tu pago vía transferencia bancaria. Te proporcionaremos las instrucciones al finalizar.
                       </p>
                     </div>
                     <div className="relative w-6 h-6 ml-4 flex items-center justify-center">
@@ -247,9 +250,9 @@ export default function CheckoutView({
                 </div>
 
                 {paymentMethod === 'transfer' && (
-                  <section>
-                    <header className="mb-6">
-                      <h2 className="font-serif text-xl text-on-surface mb-2 font-light">Comprobante de Transferencia</h2>
+                  <section className="mt-6">
+                    <header className="mb-4">
+                      <h2 className="font-serif text-lg text-on-surface mb-2 font-light">Comprobante de Transferencia</h2>
                       <p className="text-xs text-on-surface-variant">Adjunta tu comprobante para completar el pedido con mayor rapidez.</p>
                     </header>
                     <div className="space-y-4">
@@ -269,24 +272,33 @@ export default function CheckoutView({
                         </p>
                       )}
                     </div>
+                    {bankAccount && (
+                      <div className="rounded-xl border border-outline-variant/60 bg-surface-container-low p-4 text-[11px] mt-4">
+                        <p className="text-[11px] uppercase tracking-[0.25em] text-[#7D7569] font-bold mb-2">Datos Bancarios</p>
+                        <p className="text-on-surface"><strong>Banco:</strong> {bankAccount.bankType}</p>
+                        <p className="text-on-surface"><strong>Beneficiario:</strong> {bankAccount.beneficiary}</p>
+                        <p className="text-on-surface"><strong>Cuenta:</strong> {bankAccount.accountNumber}</p>
+                        {bankAccount.clabe && <p className="text-on-surface"><strong>CLABE:</strong> {bankAccount.clabe}</p>}
+                      </div>
+                    )}
                   </section>
                 )}
               </section>
 
             </div>
 
-            {/* Right Column: Order Summary (Glassmorphism) */}
-            <div className="lg:col-span-5 mt-12 lg:mt-0 lg:sticky lg:top-32">
-              <div className="bg-surface-container-low/60 backdrop-blur-2xl rounded-2xl p-8 md:p-10 border border-white/40 shadow-[0_8px_32px_rgba(0,0,0,0.02)] text-left">
-                <h2 className="font-serif text-xl text-on-surface mb-8 border-b border-outline-variant/30 pb-4">
+            {/* Right Column: Order Summary */}
+            <div className="lg:col-span-5">
+              <div className="bg-surface-container-low/60 backdrop-blur-2xl rounded-xl p-6 border border-white/40 shadow-sm text-left sticky top-8">
+                <h2 className="font-serif text-lg text-on-surface mb-6 border-b border-outline-variant/30 pb-3">
                   Resumen del Pedido
                 </h2>
 
                 {/* Items list */}
-                <div className="flex flex-col gap-6 mb-8 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                <div className="flex flex-col gap-4 mb-6 max-h-[250px] overflow-y-auto pr-2">
                   {cart.map((item, idx) => (
-                    <div key={idx} className="flex items-start gap-4">
-                      <div className="w-20 h-24 bg-surface-variant rounded flex-shrink-0 overflow-hidden border border-outline-variant/20">
+                    <div key={idx} className="flex items-start gap-3">
+                      <div className="w-16 h-20 bg-surface-variant rounded flex-shrink-0 overflow-hidden border border-outline-variant/20">
                         <img
                           alt={item.product.name}
                           className="w-full h-full object-cover mix-blend-multiply opacity-90"
@@ -294,13 +306,13 @@ export default function CheckoutView({
                         />
                       </div>
                       <div className="flex-grow pt-1 text-left">
-                        <h4 className="font-serif text-[18px] text-on-surface leading-tight mb-1">
+                        <h4 className="font-serif text-sm text-on-surface leading-tight mb-1">
                           {item.product.name}
                         </h4>
-                        <p className="text-[11px] text-outline uppercase tracking-wider mb-2">
+                        <p className="text-[10px] text-outline uppercase tracking-wider mb-1">
                           {item.product.size}
                         </p>
-                        <div className="text-sm text-on-surface font-sans">
+                        <div className="text-xs text-on-surface font-sans">
                           {item.quantity} x {convertAndFormatPrice(item.product.price, selectedCountryCode)}
                         </div>
                       </div>
@@ -309,20 +321,20 @@ export default function CheckoutView({
                 </div>
 
                 {/* Pricing totals */}
-                <div className="border-t border-outline-variant/30 pt-6 flex flex-col gap-3 mb-8 text-sm">
-                  <div className="flex justify-between text-on-surface-variant font-sans">
+                <div className="border-t border-outline-variant/30 pt-4 flex flex-col gap-2 mb-6 text-sm">
+                  <div className="flex justify-between text-on-surface-variant font-sans text-xs">
                     <span>Subtotal</span>
                     <span className="text-on-surface">{convertAndFormatPrice(subtotal, selectedCountryCode)}</span>
                   </div>
-                  <div className="flex justify-between text-on-surface-variant font-sans">
+                  <div className="flex justify-between text-on-surface-variant font-sans text-xs">
                     <span>Impuestos (18%)</span>
                     <span className="text-on-surface">{convertAndFormatPrice(tax, selectedCountryCode)}</span>
                   </div>
-                  <div className="flex justify-between text-on-surface-variant font-sans">
+                  <div className="flex justify-between text-on-surface-variant font-sans text-xs">
                     <span>Envío - {shippingZone}</span>
                     <span className="text-on-surface">{convertAndFormatPrice(shippingCost, selectedCountryCode)}</span>
                   </div>
-                  <div className="flex justify-between text-[20px] text-on-surface font-serif mt-4 pt-4 border-t border-outline-variant/30 font-medium">
+                  <div className="flex justify-between text-lg text-on-surface font-serif mt-3 pt-3 border-t border-outline-variant/30 font-medium">
                     <span>Total</span>
                     <span className="text-on-surface font-semibold">{convertAndFormatPrice(finalTotal, selectedCountryCode)}</span>
                   </div>
@@ -330,8 +342,8 @@ export default function CheckoutView({
 
                 {/* CTA Submit Button */}
                 {paymentMethod === 'transfer' && bankAccount && (
-                  <div className="mb-6 rounded-2xl border border-outline-variant/40 bg-surface-container px-5 py-4 text-sm text-on-surface-variant">
-                    <p className="font-semibold text-on-surface mb-2">Detalles de Pago</p>
+                  <div className="mb-4 rounded-xl border border-outline-variant/40 bg-surface-container px-4 py-3 text-xs text-on-surface-variant">
+                    <p className="font-semibold text-on-surface mb-1">Detalles de Pago</p>
                     <p className="text-xs leading-relaxed">
                       Banco: <span className="font-medium text-on-surface">{bankAccount.bankType}</span>
                     </p>
@@ -346,20 +358,17 @@ export default function CheckoutView({
                         CLABE: <span className="font-medium text-on-surface">{bankAccount.clabe}</span>
                       </p>
                     )}
-                    <p className="text-xs leading-relaxed mt-2">
-                      Envía tu comprobante y finalizaremos la verificación en breve.
-                    </p>
                   </div>
                 )}
                 <button
                   type="submit"
-                  className="w-full bg-primary-container text-on-primary-container py-4 px-6 rounded font-semibold text-xs tracking-widest uppercase hover:bg-primary hover:text-white transition-all duration-300 flex items-center justify-center gap-2 group shadow-sm cursor-pointer"
+                  className="w-full bg-primary-container text-on-primary-container py-3 px-4 rounded-lg font-semibold text-xs tracking-widest uppercase hover:bg-primary hover:text-white transition-all duration-300 flex items-center justify-center gap-2 group shadow-sm cursor-pointer"
                 >
                   <span>Confirmar y Generar Orden</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
 
-                <p className="text-[12px] text-center text-outline mt-6 leading-relaxed font-sans font-light">
+                <p className="text-[11px] text-center text-outline mt-4 leading-relaxed font-sans font-light">
                   Tus datos personales se utilizarán para procesar tu pedido y mejorar tu experiencia.
                 </p>
               </div>

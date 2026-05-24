@@ -20,7 +20,7 @@ export default function CartSidebar({
   onUpdateQuantity,
   onRemoveItem,
   onCheckout,
-  selectedCountryCode = 'MX'
+  selectedCountryCode = 'DO'
 }: CartSidebarProps) {
   if (!isOpen) return null;
 

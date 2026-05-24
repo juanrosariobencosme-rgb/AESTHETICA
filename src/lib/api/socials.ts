@@ -9,19 +9,19 @@ export const socialsApi = {
         .select('*')
         .eq('id', 'default')
         .single();
-      
+
       if (error && error.code !== 'PGRST116') {
         console.error('Error fetching social config:', error);
         throw error;
       }
-      
+
       if (!data) return null;
-      
+
       return {
-        whatsAppPhone: data.whatsapp_phone,
-        whatsAppText: data.whatsapp_text,
-        instagramUrl: data.instagram_url,
-        facebookUrl: data.facebook_url
+        whatsappPhone: data.whatsappPhone,
+        whatsAppText: data.whatsAppText,
+        instagramUrl: data.instagramUrl,
+        facebookUrl: data.facebookUrl
       };
     } catch (error) {
       console.error('Error in socialsApi.get:', error);
@@ -33,32 +33,32 @@ export const socialsApi = {
     try {
       const dbConfig = {
         id: 'default',
-        whatsapp_phone: config.whatsAppPhone,
-        whatsapp_text: config.whatsAppText,
-        instagram_url: config.instagramUrl,
-        facebook_url: config.facebookUrl
+        whatsappPhone: config.whatsappPhone,
+        whatsAppText: config.whatsAppText,
+        instagramUrl: config.instagramUrl,
+        facebookUrl: config.facebookUrl
       };
-      
+
       console.log('Updating social config:', dbConfig);
-      
+
       const { data, error } = await supabase
         .from('social_config')
         .upsert(dbConfig, { onConflict: 'id' })
         .select()
         .single();
-      
+
       if (error) {
         console.error('Error updating social config:', error);
         throw error;
       }
-      
+
       console.log('Social config updated successfully');
-      
+
       return {
-        whatsAppPhone: data.whatsapp_phone,
-        whatsAppText: data.whatsapp_text,
-        instagramUrl: data.instagram_url,
-        facebookUrl: data.facebook_url
+        whatsappPhone: data.whatsappPhone,
+        whatsAppText: data.whatsAppText,
+        instagramUrl: data.instagramUrl,
+        facebookUrl: data.facebookUrl
       };
     } catch (error) {
       console.error('Error in socialsApi.update:', error);

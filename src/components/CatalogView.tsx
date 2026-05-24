@@ -1,8 +1,7 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { ShoppingBag, Star, Sparkles, Filter, Check, Eye, Gift } from 'lucide-react';
+﻿import { useState } from 'react';
+import { motion } from 'motion/react';
 import { PRODUCTS } from '../data';
-import { Product, PromotionBundle, Combo, CarouselBanner, ShippingSettings, BankAccount } from '../types';
+import { Product, PromotionBundle, Combo, CarouselBanner, ShippingSettings, BankAccount, SkinType } from '../types';
 import { convertAndFormatPrice } from '../utils/currency';
 
 interface CatalogViewProps {
@@ -16,43 +15,30 @@ interface CatalogViewProps {
   carouselBanners?: CarouselBanner[];
   shippingSettings?: ShippingSettings;
   bankAccount?: BankAccount;
+  skinTypes?: SkinType[];
   onAddBundleToCart?: (products: Product[], customName: string, customPrice: number) => void;
 }
 
-const productCategories: Record<string, string> = {
-  'lumiere-doree': 'Serums',
-  'aura-essentials': 'Cleansers',
-  'hydro-plump': 'Serums',
-  'aurum-velvet': 'Moisturizers',
-  'nectar-soleil': 'Moisturizers',
-  'sublime-elixir-iris': 'Serums',
-  'caviar-luxe-infusion': 'Moisturizers',
-  'botanique-mist-bioactive': 'Cleansers'
-};
-
-const productSkinTypes: Record<string, string[]> = {
-  'lumiere-doree': ['dry', 'oily-combination', 'sensitive', 'all'],
-  'aura-essentials': ['dry', 'sensitive', 'all'],
-  'hydro-plump': ['dry', 'oily-combination', 'sensitive', 'all'],
-  'aurum-velvet': ['dry', 'sensitive', 'all'],
-  'nectar-soleil': ['dry', 'oily-combination', 'sensitive', 'all'],
-  'sublime-elixir-iris': ['dry', 'sensitive', 'all'],
-  'caviar-luxe-infusion': ['dry', 'all'],
-  'botanique-mist-bioactive': ['dry', 'oily-combination', 'sensitive', 'all']
+const defaultSkinTypeLabels: Record<string, string> = {
+  NORMAL: 'Normal',
+  SECA: 'Seca',
+  GRASA: 'Grasa',
+  MIXTA: 'Mixta',
+  SENSIBLE: 'Sensible',
+  ACNEICA: 'Acneica',
+  MADURA: 'Madura',
+  DESHIDRATADA: 'Deshidratada',
+  REACTIVA: 'Reactiva'
 };
 
 const getProductBadge = (id: string) => {
   switch (id) {
     case 'lumiere-doree':
-      return { text: 'Best Seller', className: 'bg-[#4f644e]/10 text-[#4f644e] border border-[#4f644e]/20' };
+      return { text: 'Top Seller', className: 'bg-[#4f644e]/10 text-[#4f644e] border border-[#4f644e]/20' };
     case 'aura-essentials':
-      return { text: 'Award Winner', className: 'bg-[#725a37]/10 text-[#725a37] border border-[#725a37]/20' };
+      return { text: 'Premiado', className: 'bg-[#725a37]/10 text-[#725a37] border border-[#725a37]/20' };
     case 'hydro-plump':
-      return { text: 'New', className: 'bg-stone-200/50 text-[#4d463c] border border-stone-300' };
-    case 'aurum-velvet':
-      return { text: 'Best Seller', className: 'bg-[#4f644e]/10 text-[#4f644e] border border-[#4f644e]/20' };
-    case 'nectar-soleil':
-      return { text: 'New', className: 'bg-stone-200/50 text-[#4d463c] border border-stone-300' };
+      return { text: 'Nuevo', className: 'bg-stone-200/50 text-[#4d463c] border border-stone-300' };
     default:
       return null;
   }
@@ -61,11 +47,13 @@ const getProductBadge = (id: string) => {
 const CustomCheckbox = ({
   checked,
   onChange,
-  label
+  label,
+  key
 }: {
   checked: boolean;
   onChange: () => void;
   label: string;
+  key?: string;
 }) => {
   return (
     <label className="flex items-center gap-3 cursor-pointer group text-left">
@@ -76,478 +64,419 @@ const CustomCheckbox = ({
           onChange={onChange}
           className="opacity-0 absolute inset-0 cursor-pointer w-full h-full"
         />
-        <Check
-          className={`w-3.5 h-3.5 text-[#725a37] transition-all duration-250 pointer-events-none ${
-            checked ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
-          }`}
-        />
+        <span className={`block w-3 h-3 rounded-sm bg-[#725a37] transition-all ${checked ? 'opacity-100 scale-100' : 'opacity-0 scale-75'}`} />
       </div>
-      <span className={`text-xs uppercase tracking-wide font-medium transition-colors ${
-        checked ? 'text-[#2A2621] font-semibold' : 'text-[#7D7569] group-hover:text-[#725a37]'
-      }`}>
+      <span className={`text-xs uppercase tracking-wide font-medium transition-colors ${checked ? 'text-[#2A2621] font-semibold' : 'text-[#7D7569] group-hover:text-[#725a37]'}`}>
         {label}
       </span>
     </label>
   );
 };
 
-export default function CatalogView({ 
-  onAddToCart, 
+export default function CatalogView({
+  onAddToCart,
   onViewProductDetails,
   showPricesAndCart = true,
-  selectedCountryCode = 'MX',
+  selectedCountryCode = 'DO',
   products = PRODUCTS,
   promotionBundles = [],
   combos = [],
   carouselBanners = [],
   shippingSettings,
   bankAccount,
+  skinTypes,
   onAddBundleToCart
 }: CatalogViewProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(['Serums', 'Cleansers', 'Moisturizers', 'Oils', 'Masks', 'Treatments', 'Promociones', 'Combos']);
   const [selectedSkinTypes, setSelectedSkinTypes] = useState<string[]>(['all']);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(['Cleansers', 'Serums', 'Moisturizers']);
-  const [priceRange, setPriceRange] = useState<number>(200);
-  const [visibleLimit, setVisibleLimit] = useState<number>(3);
+  const [showProducts, setShowProducts] = useState(true);
+  const [showPromotions, setShowPromotions] = useState(true);
+  const [showCombos, setShowCombos] = useState(true);
+  const [onlyOffers, setOnlyOffers] = useState(false);
+  const [onlyActive, setOnlyActive] = useState(true);
+  const [priceRange, setPriceRange] = useState<number>(260);
+  const [visibleLimit, setVisibleLimit] = useState<number>(12);
 
-  const handleCategoryChange = (cat: string) => {
-    setSelectedCategories(prev => {
-      if (prev.includes(cat)) {
-        // Prevent custom styling desolating all selections to guide comfortable filtering
-        if (prev.length === 1) return prev;
-        return prev.filter(c => c !== cat);
-      } else {
-        return [...prev, cat];
-      }
-    });
+  const normalizedSearch = searchQuery.trim().toLowerCase();
+  const categorySet = Array.from(
+    new Set([
+      'Serums',
+      'Cleansers',
+      'Moisturizers',
+      'Oils',
+      'Masks',
+      'Treatments',
+      'Promociones',
+      'Combos',
+      ...products.map((item) => item.category || 'Serums'),
+      ...promotionBundles.map((promo) => promo.category || 'Promociones'),
+      ...combos.map((combo) => combo.category || 'Combos')
+    ])
+  );
+
+  const skinOptions = [
+    { id: 'all', label: 'Todos' },
+    { id: 'NORMAL', label: 'Normal' },
+    { id: 'SECA', label: 'Seca' },
+    { id: 'GRASA', label: 'Grasa' },
+    { id: 'MIXTA', label: 'Mixta' },
+    { id: 'SENSIBLE', label: 'Sensible' },
+    { id: 'ACNEICA', label: 'Acneica' },
+    { id: 'MADURA', label: 'Madura' },
+    { id: 'DESHIDRATADA', label: 'Deshidratada' },
+    { id: 'REACTIVA', label: 'Reactiva' }
+  ];
+
+  const matchesSearch = (values: string[]) => {
+    if (!normalizedSearch) return true;
+    return values.some((value) => value.toLowerCase().includes(normalizedSearch));
   };
 
-  const handleSkinTypeChange = (type: string) => {
-    if (type === 'all') {
-      setSelectedSkinTypes(['all']);
-    } else {
-      setSelectedSkinTypes(prev => {
-        const filtered = prev.filter(t => t !== 'all');
-        if (filtered.includes(type)) {
-          const next = filtered.filter(t => t !== type);
-          return next.length === 0 ? ['all'] : next;
-        } else {
-          return [...filtered, type];
-        }
-      });
-    }
+  const productMatches = (product: Product) => {
+    const category = product.category || 'Serums';
+    const skinTypes = product.skinTypes?.map((value) => value.toString()) || [];
+    const hasOffer = product.isOffer || Boolean(product.salePrice) || Boolean(product.promotionTag);
+    const isActive = product.active !== false;
+    const passesActive = !onlyActive || isActive;
+    const passesCategory = selectedCategories.includes(category);
+    const passesSkin = selectedSkinTypes.includes('all') || skinTypes.some((type) => selectedSkinTypes.includes(type));
+    const passesPrice = (product.salePrice ?? product.price) <= priceRange;
+    const passesOffer = !onlyOffers || hasOffer;
+    const passesSearch = matchesSearch([product.name, product.subtitle, product.description, category, product.promotionTag || '']);
+    return passesActive && passesCategory && passesSkin && passesPrice && passesOffer && passesSearch;
   };
 
-  const handleResetFilters = () => {
+  const promotionMatches = (promo: PromotionBundle) => {
+    const category = promo.category || 'Promociones';
+    const hasOffer = promo.valuePrice !== undefined && promo.valuePrice > promo.price;
+    const isActive = promo.active !== false;
+    const passesActive = !onlyActive || isActive;
+    const passesCategory = selectedCategories.includes(category) || selectedCategories.includes('Promociones');
+    const passesOffer = !onlyOffers || hasOffer;
+    const passesSearch = matchesSearch([promo.title, promo.subtitle, promo.description, promo.tag || '', category]);
+    return passesActive && passesCategory && passesOffer && passesSearch;
+  };
+
+  const comboMatches = (combo: Combo) => {
+    const category = combo.category || 'Combos';
+    const hasOffer = combo.valuePrice !== undefined && combo.valuePrice > combo.price;
+    const isActive = combo.active !== false;
+    const passesActive = !onlyActive || isActive;
+    const passesCategory = selectedCategories.includes(category) || selectedCategories.includes('Combos');
+    const passesOffer = !onlyOffers || hasOffer;
+    const passesSearch = matchesSearch([combo.title, combo.subtitle || '', combo.description, combo.tag || '', category]);
+    return passesActive && passesCategory && passesOffer && passesSearch;
+  };
+
+  const filteredProducts = products.filter(productMatches);
+  const filteredPromotions = promotionBundles.filter(promotionMatches);
+  const filteredCombos = combos.filter(comboMatches);
+
+  const visibleProducts = filteredProducts.slice(0, visibleLimit);
+  const visiblePromotions = filteredPromotions.slice(0, 3);
+  const visibleCombos = filteredCombos.slice(0, 3);
+
+  const resetFilters = () => {
+    setSearchQuery('');
+    setSelectedCategories(categorySet);
     setSelectedSkinTypes(['all']);
-    setSelectedCategories(['Cleansers', 'Serums', 'Moisturizers']);
-    setPriceRange(200);
-    setVisibleLimit(3);
+    setShowProducts(true);
+    setShowPromotions(true);
+    setShowCombos(true);
+    setOnlyOffers(false);
+    setOnlyActive(true);
+    setPriceRange(260);
   };
 
-  // Filtration query logic
-  const filtered = products.filter(p => {
-    if (!showPricesAndCart) return true; // Keep all products in full Catalog view
+  const formatSkinTypes = (skinTypes?: string[]) => {
+    if (!skinTypes || skinTypes.length === 0) return 'Todos';
+    return skinTypes.map((type) => defaultSkinTypeLabels[type.toUpperCase()] || type).join(', ');
+  };
 
-    // 1. Category Filter
-    const cat = productCategories[p.id] || 'Serums';
-    const passesCategory = selectedCategories.includes(cat);
-
-    // 2. Skin Type Filter
-    const skinTypes = productSkinTypes[p.id] || ['all'];
-    const passesSkinType = selectedSkinTypes.includes('all') || 
-                           selectedSkinTypes.some(st => skinTypes.includes(st));
-
-    // 3. Price Filter
-    const passesPrice = p.price <= priceRange;
-
-    return passesCategory && passesSkinType && passesPrice;
-  });
-
-  const visibleLimitActual = showPricesAndCart ? visibleLimit : 16;
-  const visibleProducts = filtered.slice(0, visibleLimitActual);
+  const renderCount = () => {
+    return [showProducts ? filteredProducts.length : 0, showPromotions ? filteredPromotions.length : 0, showCombos ? filteredCombos.length : 0].reduce((acc, value) => acc + value, 0);
+  };
 
   return (
-    <div className="bg-[#FAF8F5] py-16 min-h-screen">
+    <div className="bg-[#FAF8F5] py-12 min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Intro Section Header */}
-        <div className="text-center space-y-4 max-w-3xl mx-auto mb-16">
-          <span className="text-[10px] uppercase tracking-[0.4em] text-[#C5A880] font-bold">
-            {showPricesAndCart ? "La Botica de Lujo Alternativo" : "Catálogo de Especímenes"}
-          </span>
-          <h1 className="text-3xl sm:text-5xl font-serif font-light text-[#2A2621] tracking-wide">
-            {showPricesAndCart ? "Colección Selecta Aesthetica" : "Nuestros Elixires Esenciales"}
-          </h1>
-          <div className="h-[1.5px] w-20 bg-[#C5A880] mx-auto mt-4" />
-          <p className="text-sm text-[#7D7569] leading-relaxed">
-            {showPricesAndCart 
-              ? "Nuestros elixires están finamente balanceados para alimentar, esculpir y purificar de manera holística. Cada frasco es un tributo a la excelencia dermatológica y sensorial."
-              : "Explore las características de nuestra gama completa de tratamientos moleculares, sin prisas ni presiones. Creados para dar a conocer sus beneficios clínicamente comprobados, texturas y rituales sugeridos."}
-          </p>
+        <div className="text-center space-y-3 max-w-2xl mx-auto mb-10">
+          <h1 className="text-3xl sm:text-4xl font-serif text-[#2A2621]">Catálogo</h1>
+          <p className="text-sm text-[#7D7569]">Explora nuestra colección de productos</p>
         </div>
 
-        {/* Outer Split Wrapper - Filters Column vs. Catalog List */}
-        <div className="flex flex-col lg:flex-row gap-12 items-start mt-12 pb-12">
-          
-          {/* 1. Sidebar Column on the Left - ONLY when showing pricing and cart */}
-          {showPricesAndCart && (
-            <aside className="w-full lg:w-64 shrink-0 border border-[#EADCC9]/50 bg-white/40 p-6 sm:p-8 rounded-xs lg:sticky lg:top-28">
-              <div className="space-y-10">
-                
-                {/* Sidebar Header Title */}
-                <div className="border-b border-[#EADCC9] pb-4 text-left">
-                  <h3 className="font-serif text-xl text-[#725a37] tracking-wider uppercase">
-                    Filtrar Colección
-                  </h3>
-                  <p className="text-[10px] text-[#7D7569] uppercase tracking-wide font-sans mt-1">
-                    Ajustes de Pureza
-                  </p>
-                </div>
-
-                {/* Skin Type Filter Options */}
-                <div className="space-y-4 text-left">
-                  <h4 className="text-[11px] font-semibold tracking-[0.15em] text-[#7D7569] uppercase border-l-2 border-[#C5A880] pl-2">
-                    Tipo de Dermis
-                  </h4>
-                  <div className="space-y-3">
-                    <CustomCheckbox
-                      checked={selectedSkinTypes.includes('all')}
-                      onChange={() => handleSkinTypeChange('all')}
-                      label="Todos los Tipos"
-                    />
-                    <CustomCheckbox
-                      checked={selectedSkinTypes.includes('dry')}
-                      onChange={() => handleSkinTypeChange('dry')}
-                      label="Piel Seca (Dry)"
-                    />
-                    <CustomCheckbox
-                      checked={selectedSkinTypes.includes('oily-combination')}
-                      onChange={() => handleSkinTypeChange('oily-combination')}
-                      label="Mixta / Grasa"
-                    />
-                    <CustomCheckbox
-                      checked={selectedSkinTypes.includes('sensitive')}
-                      onChange={() => handleSkinTypeChange('sensitive')}
-                      label="Piel Sensible"
-                    />
-                  </div>
-                </div>
-
-                {/* Category Filter Options */}
-                <div className="space-y-4 text-left">
-                  <h4 className="text-[11px] font-semibold tracking-[0.15em] text-[#7D7569] uppercase border-l-2 border-[#C5A880] pl-2">
-                    Categoría
-                  </h4>
-                  <div className="space-y-3">
-                    <CustomCheckbox
-                      checked={selectedCategories.includes('Cleansers')}
-                      onChange={() => handleCategoryChange('Cleansers')}
-                      label="Limpiadores"
-                    />
-                    <CustomCheckbox
-                      checked={selectedCategories.includes('Serums')}
-                      onChange={() => handleCategoryChange('Serums')}
-                      label="Sueros (Serums)"
-                    />
-                    <CustomCheckbox
-                      checked={selectedCategories.includes('Moisturizers')}
-                      onChange={() => handleCategoryChange('Moisturizers')}
-                      label="Moisturizers"
-                    />
-                  </div>
-                </div>
-
-                {/* Slider for Price Ceiling */}
-                <div className="space-y-4 text-left">
-                  <h4 className="text-[11px] font-semibold tracking-[0.15em] text-[#7D7569] uppercase border-l-2 border-[#C5A880] pl-2 flex justify-between items-center">
-                    <span>Precio Máximo</span>
-                    <span className="font-mono text-[#725a37] font-bold text-xs">{convertAndFormatPrice(priceRange, selectedCountryCode)}</span>
-                  </h4>
-                  <div className="space-y-2">
-                    <input
-                      type="range"
-                      min="50"
-                      max="200"
-                      step="5"
-                      value={priceRange}
-                      onChange={(e) => {
-                        setPriceRange(Number(e.target.value));
-                        setVisibleLimit(3); // Reset limits on slide to feel natural
-                      }}
-                      className="w-full h-1 bg-[#EADCC9] rounded-lg appearance-none cursor-pointer accent-[#725a37] focus:outline-none"
-                    />
-                    <div className="flex justify-between text-[9px] font-mono tracking-wider text-[#7D7569]">
-                      <span>{convertAndFormatPrice(50, selectedCountryCode)}</span>
-                      <span>{convertAndFormatPrice(200, selectedCountryCode)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Reset constraints CTA */}
-                <button
-                  onClick={handleResetFilters}
-                  className="w-full py-2.5 bg-stone-900 hover:bg-[#725a37] text-white text-[9px] uppercase tracking-widest font-bold font-sans transition-colors cursor-pointer"
-                >
-                  Limpiar Filtros
-                </button>
-
+        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
+          <aside className="space-y-5 bg-white border border-[#EADCC9]/30 p-5 rounded-lg shadow-sm sticky top-24 self-start">
+            <div className="space-y-5">
+              <div>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Buscar..."
+                  className="w-full rounded-lg border border-[#EADCC9] bg-[#FAF8F5] px-4 py-2.5 text-sm text-[#2A2621] focus:border-[#C5A880] focus:outline-none"
+                />
               </div>
-            </aside>
-          )}
 
-          {/* 2. Catalog Section Grid on the Right */}
-          <section className="flex-grow w-full">
-            
-            {/* Header statistics alignment with design */}
-            <div className="flex justify-between items-end mb-8 border-b border-[#EADCC9]/50 pb-4 text-left">
-              <h1 className="font-serif text-3xl sm:text-4xl text-[#725a37] tracking-tight font-light">
-                {showPricesAndCart ? "Todas las Colecciones" : "Gama de Fórmulas Creadas"}
-              </h1>
-              <span className="text-[10px] uppercase tracking-[0.2em] text-[#7D7569] hidden md:block">
-                {showPricesAndCart ? "Mostrando" : "Viendo"} 1-{Math.min(visibleLimitActual, filtered.length)} de {filtered.length} elixires
-              </span>
+              <div>
+                <p className="text-[11px] uppercase tracking-wider font-semibold text-[#7D7569] mb-3">Tipo de piel</p>
+                <div className="space-y-2">
+                  {skinOptions.map((option) => (
+                    <CustomCheckbox
+                      key={option.id}
+                      checked={selectedSkinTypes.includes(option.id)}
+                      onChange={() => {
+                        if (option.id === 'all') {
+                          setSelectedSkinTypes(['all']);
+                          return;
+                        }
+                        setSelectedSkinTypes((prev) => {
+                          const next = prev.filter((value) => value !== 'all');
+                          if (next.includes(option.id)) {
+                            const filtered = next.filter((value) => value !== option.id);
+                            return filtered.length ? filtered : ['all'];
+                          }
+                          return [...next, option.id];
+                        });
+                      }}
+                      label={option.label}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-[11px] uppercase tracking-wider font-semibold text-[#7D7569] mb-3">Categorías</p>
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
+                  {categorySet.map((category) => (
+                    <CustomCheckbox
+                      key={category}
+                      checked={selectedCategories.includes(category)}
+                      onChange={() => {
+                        setSelectedCategories((prev) => {
+                          if (prev.includes(category)) {
+                            const filtered = prev.filter((item) => item !== category);
+                            return filtered.length ? filtered : prev;
+                          }
+                          return [...prev, category];
+                        });
+                      }}
+                      label={category}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={onlyOffers}
+                    onChange={() => setOnlyOffers(!onlyOffers)}
+                    className="w-4 h-4 accent-[#C5A880]"
+                  />
+                  <span className="text-xs text-[#7D7569]">Solo ofertas</span>
+                </label>
+              </div>
+
+              <button
+                onClick={resetFilters}
+                className="w-full rounded-lg bg-[#2A2621] py-2.5 text-xs uppercase tracking-wider text-white font-semibold hover:bg-[#C5A880] transition-all"
+              >
+                Limpiar filtros
+              </button>
+            </div>
+          </aside>
+
+          <section className="space-y-12">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-[#7D7569]">{renderCount()} productos encontrados</p>
             </div>
 
-            <AnimatePresence mode="popLayout">
-              {filtered.length === 0 ? (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.98 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="text-center py-24 bg-white border border-[#EADCC9]/40 p-8 max-w-md mx-auto space-y-4"
-                >
-                  <ShoppingBag className="w-12 h-12 text-[#C5A880] mx-auto animate-pulse" />
-                  <h2 className="font-serif text-xl text-[#2A2621]">Ningún elixir coincide</h2>
-                  <p className="text-xs text-[#7D7569] leading-relaxed">
-                    {showPricesAndCart
-                      ? "Ajuste los diales de tipo de dermis o amplíe el rango de precio para revelar nuestras formulaciones celulares."
-                      : "Ajuste los diales de tipo de dermis o categorías para revelar nuestras formulaciones celulares."}
-                  </p>
-                  <button
-                    onClick={handleResetFilters}
-                    className="py-2.5 px-6 bg-[#2A2621] text-white text-[10px] uppercase tracking-widest font-bold hover:bg-[#C5A880] transition-colors"
-                  >
-                    Restaurar Filtros
-                  </button>
-                </motion.div>
-              ) : (
-                <div className={`grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-16 ${showPricesAndCart ? 'lg:grid-cols-3' : 'lg:grid-cols-3 xl:grid-cols-4'}`}>
-                  {visibleProducts.map((p) => {
-                    const badge = getProductBadge(p.id);
+            {showProducts && filteredProducts.length > 0 && (
+              <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <h2 className="text-2xl font-serif text-[#2A2621]">Productos</h2>
+                  <div className="flex-1 h-px bg-[#EADCC9]/50" />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {visibleProducts.map((product, index) => {
+                    const active = product.active !== false;
                     return (
                       <motion.article
+                        key={product.id}
                         layout
-                        initial={{ opacity: 0, y: 15 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.45, ease: 'easeOut' }}
-                        key={p.id}
-                        onClick={() => onViewProductDetails(p)}
-                        className="group flex flex-col relative cursor-pointer text-center bg-transparent transform transition-all duration-500 hover:-translate-y-2"
+                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ duration: 0.4, delay: index * 0.05 }}
+                        whileHover={{ y: -4, scale: 1.02 }}
+                        className={`group overflow-hidden rounded-2xl border border-[#EADCC9]/30 bg-white shadow-sm transition-all duration-300 ${active ? '' : 'opacity-60 grayscale'}`}
                       >
-                        {/* Tags Badges left top corner aligned */}
-                        {badge && (
-                          <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
-                            <span className={`px-3 py-1 rounded-full text-[9px] font-sans font-semibold uppercase tracking-wider backdrop-blur-xs ${badge.className}`}>
-                              {badge.text}
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Circular add shopping bag quick-cta */}
-                        {showPricesAndCart && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onAddToCart(p);
-                            }}
-                            className="absolute bottom-32 right-4 z-10 w-10 h-10 rounded-full bg-white/95 backdrop-blur-md flex items-center justify-center text-[#725a37] opacity-0 group-hover:opacity-100 transition-opacity duration-300 shadow-[0_4px_12px_rgba(114,90,55,0.08)] hover:bg-[#725a37] hover:text-white"
-                            title="Añadir al bolso sensorial"
-                          >
-                            <ShoppingBag className="w-4 h-4" />
-                          </button>
-                        )}
-
-                        {/* Product Image Frame */}
-                        <div className="aspect-square bg-[#FAF8F5] border border-[#EADCC9]/55 overflow-hidden relative rounded-xs mb-6 flex items-center justify-center p-0">
-                          <img
-                            alt={p.name}
-                            className="w-full h-full object-cover transition-transform duration-750 ease-out group-hover:scale-105"
-                            src={p.image}
+                        <div className="relative h-56 overflow-hidden bg-gradient-to-br from-[#FAF8F5] to-[#F2ECE4]">
+                          <motion.img 
+                            src={product.image} 
+                            alt={product.name} 
+                            className="object-cover w-full h-full transition-transform duration-700 group-hover:scale-110" 
                             referrerPolicy="no-referrer"
+                            initial={{ scale: 1 }}
+                            whileHover={{ scale: 1.1 }}
                           />
-                        </div>
-
-                        {/* Title descriptions block centered */}
-                        <div className="flex flex-col flex-grow text-center">
-                          <h2 className="font-serif text-[22px] tracking-wide text-on-background group-hover:text-[#725a37] transition-colors mb-1.5 leading-tight">
-                            {p.name}
-                          </h2>
-                          <p className="text-xs text-[#C5A880] tracking-wider uppercase font-medium mb-1 font-sans">
-                            {p.subtitle}
-                          </p>
-                          <p className="text-xs text-[#7D7569] font-light leading-relaxed mb-3 line-clamp-3 px-4">
-                            {p.description}
-                          </p>
-                          {showPricesAndCart ? (
-                            <span className="font-sans text-xs uppercase tracking-widest font-semibold text-[#725a37] mt-auto">
-                              {convertAndFormatPrice(p.price, selectedCountryCode)}
-                            </span>
-                          ) : (
-                            <span className="text-[10px] font-mono uppercase tracking-widest text-[#a59f95] mt-auto">
-                              Contenido: {p.size}
-                            </span>
+                          {product.promotionTag && (
+                            <motion.span 
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              className="absolute top-3 left-3 rounded-full bg-[#C5A880]/90 backdrop-blur-sm px-3 py-1.5 text-[10px] uppercase tracking-wide text-white font-semibold shadow-sm"
+                            >
+                              {product.promotionTag}
+                            </motion.span>
                           )}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                         </div>
-
+                        <div className="p-5 space-y-3">
+                          <motion.h3 
+                            className="text-lg font-serif text-[#1C1917] group-hover:text-[#725a37] transition-colors"
+                            whileHover={{ x: 2 }}
+                          >
+                            {product.name}
+                          </motion.h3>
+                          <p className="text-xs text-[#7D7569] line-clamp-2 leading-relaxed">{product.subtitle}</p>
+                          <div className="flex items-center justify-between pt-2">
+                            <div>
+                              {product.salePrice ? (
+                                <div className="flex items-center gap-2">
+                                  <motion.span 
+                                    className="text-lg font-semibold text-[#2A2621]"
+                                    initial={{ scale: 1 }}
+                                    whileHover={{ scale: 1.05 }}
+                                  >
+                                    {convertAndFormatPrice(product.salePrice, selectedCountryCode)}
+                                  </motion.span>
+                                  <span className="text-xs line-through text-[#A59F95]">{convertAndFormatPrice(product.price, selectedCountryCode)}</span>
+                                </div>
+                              ) : (
+                                <motion.span 
+                                  className="text-lg font-semibold text-[#2A2621]"
+                                  initial={{ scale: 1 }}
+                                  whileHover={{ scale: 1.05 }}
+                                >
+                                  {convertAndFormatPrice(product.price, selectedCountryCode)}
+                                </motion.span>
+                              )}
+                            </div>
+                          </div>
+                          <motion.button
+                            type="button"
+                            onClick={() => onAddToCart(product)}
+                            className="w-full rounded-xl bg-[#2A2621] py-2.5 text-xs uppercase tracking-wider text-white transition-all hover:bg-[#C5A880] shadow-sm"
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            Añadir al carrito
+                          </motion.button>
+                        </div>
                       </motion.article>
                     );
                   })}
                 </div>
-              )}
-            </AnimatePresence>
-
-            {/* Load more logic simulation: "DISCOVER MORE" button from the catalog */}
-            {filtered.length > visibleLimit && (
-              <div className="mt-16 flex justify-center border-t border-[#EADCC9]/30 pt-12">
-                <button
-                  onClick={() => setVisibleLimit(prev => prev + 3)}
-                  className="border border-[#7f766a] text-on-background px-8 py-3.5 text-xs font-semibold tracking-widest uppercase hover:border-[#725a37] hover:text-[#725a37] bg-transparent transition-colors duration-300 cursor-pointer"
-                >
-                  DISCOVER MORE
-                </button>
               </div>
             )}
 
-            {/* Promotions Section in Catalog */}
-            {showPricesAndCart && promotionBundles && promotionBundles.length > 0 && (
-              <div className="mt-16 sm:mt-20 pt-8 sm:pt-12 border-t border-[#EADCC9]/30">
-                <div className="text-center space-y-4 mb-8 sm:mb-12">
-                  <span className="text-[10px] uppercase tracking-[0.3em] text-[#C5A880] font-bold flex items-center justify-center gap-2">
-                    <Gift className="w-4 h-4" />
-                    Ofertas Especiales
-                  </span>
-                  <h2 className="text-xl sm:text-2xl md:text-3xl font-serif text-[#1C1917]">
-                    Promociones Disponibles
-                  </h2>
+            {showPromotions && filteredPromotions.length > 0 && (
+              <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <h2 className="text-2xl font-serif text-[#2A2621]">Promociones</h2>
+                  <div className="flex-1 h-px bg-[#EADCC9]/50" />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                  {promotionBundles.slice(0, 3).map((bundle) => (
-                    <motion.div
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {visiblePromotions.map((bundle) => (
+                    <motion.article
                       key={bundle.id}
-                      initial={{ opacity: 0, y: 20 }}
+                      layout
+                      initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="bg-white border border-[#EADCC9]/50 overflow-hidden shadow-xs hover:shadow-md transition-all duration-300"
+                      className="group overflow-hidden rounded-lg border border-[#EADCC9]/40 bg-white shadow-sm"
                     >
-                      <div className="relative aspect-4/5 overflow-hidden bg-stone-100">
-                        {bundle.tag && (
-                          <span className="absolute top-4 left-4 z-10 bg-[#FAF8F5]/90 backdrop-blur-xs text-[9px] uppercase tracking-[0.25em] text-[#C5A880] px-3 py-1 font-semibold">
-                            {bundle.tag}
-                          </span>
-                        )}
-                        <img
-                          src={bundle.image}
-                          alt={bundle.title}
-                          className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
-                          referrerPolicy="no-referrer"
-                        />
+                      <div className="relative h-48 overflow-hidden bg-[#FAF8F5]">
+                        <img src={bundle.image} alt={bundle.title} className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105" referrerPolicy="no-referrer" />
+                        {bundle.tag && <span className="absolute top-3 left-3 rounded bg-[#C5A880]/90 px-2 py-1 text-[10px] uppercase tracking-wide text-white font-semibold">{bundle.tag}</span>}
                       </div>
-                      <div className="p-4 sm:p-5 space-y-3">
-                        <div>
-                          <h3 className="font-serif text-base sm:text-lg text-[#1C1917]">{bundle.title}</h3>
-                          <p className="text-[10px] text-[#C5A880] uppercase tracking-wider italic">{bundle.subtitle}</p>
-                        </div>
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                      <div className="p-4 space-y-3">
+                        <h3 className="text-lg font-serif text-[#1C1917]">{bundle.title}</h3>
+                        <p className="text-xs text-[#7D7569] line-clamp-2">{bundle.subtitle}</p>
+                        <div className="flex items-center justify-between">
                           <div>
-                            <span className="font-mono text-sm font-semibold text-[#1C1917]">{convertAndFormatPrice(bundle.price, selectedCountryCode)}</span>
-                            {bundle.valuePrice && (
-                              <span className="block text-[9px] text-[#A59F95] line-through">{convertAndFormatPrice(bundle.valuePrice, selectedCountryCode)}</span>
-                            )}
+                            <span className="text-base font-semibold text-[#2A2621]">{convertAndFormatPrice(bundle.price, selectedCountryCode)}</span>
+                            {bundle.valuePrice && <span className="text-xs line-through text-[#A59F95] ml-2">{convertAndFormatPrice(bundle.valuePrice, selectedCountryCode)}</span>}
                           </div>
-                          {onAddBundleToCart && (
-                            <button
-                              onClick={() => {
-                                const bundleProducts = products.filter(p => bundle.productIds.includes(p.id));
-                                onAddBundleToCart(bundleProducts, bundle.title, bundle.price);
-                              }}
-                              className="w-full sm:w-auto py-2 px-4 bg-[#2A2621] hover:bg-[#C5A880] text-white text-[9px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2"
-                            >
-                              <Gift className="w-3 h-3" />
-                              Agregar
-                            </button>
-                          )}
                         </div>
+                        {onAddBundleToCart && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const bundleProducts = products.filter((product) => bundle.productIds.includes(product.id));
+                              onAddBundleToCart(bundleProducts, bundle.title, bundle.price);
+                            }}
+                            className="w-full rounded-lg bg-[#2A2621] py-2 text-xs uppercase tracking-wider text-white hover:bg-[#C5A880] transition-all"
+                          >
+                            Añadir al carrito
+                          </button>
+                        )}
                       </div>
-                    </motion.div>
+                    </motion.article>
                   ))}
                 </div>
               </div>
             )}
 
-            {showPricesAndCart && combos && combos.length > 0 && (
-              <div className="mt-16 sm:mt-20 pt-8 sm:pt-12 border-t border-[#EADCC9]/30">
-                <div className="text-center space-y-4 mb-8 sm:mb-12">
-                  <span className="text-[10px] uppercase tracking-[0.3em] text-[#C5A880] font-bold flex items-center justify-center gap-2">
-                    <Gift className="w-4 h-4" />
-                    Combos Premium
-                  </span>
-                  <h2 className="text-xl sm:text-2xl md:text-3xl font-serif text-[#1C1917]">
-                    Packs de Rituales
-                  </h2>
+            {showCombos && filteredCombos.length > 0 && (
+              <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <h2 className="text-2xl font-serif text-[#2A2621]">Combos</h2>
+                  <div className="flex-1 h-px bg-[#EADCC9]/50" />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                  {combos.slice(0, 3).map((combo) => (
-                    <motion.div
-                      key={combo.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="bg-white border border-[#EADCC9]/50 overflow-hidden shadow-xs hover:shadow-md transition-all duration-300"
-                    >
-                      <div className="relative aspect-4/5 overflow-hidden bg-stone-100">
-                        <img
-                          src={combo.image}
-                          alt={combo.title}
-                          className="w-full h-full object-cover transition-transform duration-700 hover:scale-105"
-                          referrerPolicy="no-referrer"
-                        />
-                      </div>
-                      <div className="p-4 sm:p-5 space-y-3">
-                        <div>
-                          <h3 className="font-serif text-base sm:text-lg text-[#1C1917]">{combo.title}</h3>
-                          <p className="text-[10px] text-[#C5A880] uppercase tracking-wider italic">{combo.subtitle}</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {visibleCombos.map((combo) => (
+                      <motion.article
+                        key={combo.id}
+                        layout
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="group overflow-hidden rounded-lg border border-[#EADCC9]/40 bg-white shadow-sm"
+                      >
+                        <div className="relative h-48 overflow-hidden bg-[#FAF8F5]">
+                          <img src={combo.image} alt={combo.title} className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105" referrerPolicy="no-referrer" />
+                          {combo.tag && <span className="absolute top-3 left-3 rounded bg-[#C5A880]/90 px-2 py-1 text-[10px] uppercase tracking-wide text-white font-semibold">{combo.tag}</span>}
                         </div>
-                        <p className="text-[11px] text-[#7D7569] leading-relaxed line-clamp-3">{combo.description}</p>
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                          <div>
-                            <span className="font-mono text-sm font-semibold text-[#1C1917]">{convertAndFormatPrice(combo.price, selectedCountryCode)}</span>
-                            {combo.valuePrice && (
-                              <span className="block text-[9px] text-[#A59F95] line-through">{convertAndFormatPrice(combo.valuePrice, selectedCountryCode)}</span>
-                            )}
+                        <div className="p-4 space-y-3">
+                          <h3 className="text-lg font-serif text-[#1C1917]">{combo.title}</h3>
+                          <p className="text-xs text-[#7D7569] line-clamp-2">{combo.subtitle}</p>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <span className="text-base font-semibold text-[#2A2621]">{convertAndFormatPrice(combo.price, selectedCountryCode)}</span>
+                              {combo.valuePrice && <span className="text-xs line-through text-[#A59F95] ml-2">{convertAndFormatPrice(combo.valuePrice, selectedCountryCode)}</span>}
+                            </div>
                           </div>
                           {onAddBundleToCart && (
                             <button
+                              type="button"
                               onClick={() => {
-                                const comboProducts = products.filter(p => combo.productIds.includes(p.id));
+                                const comboProducts = products.filter((product) => combo.productIds.includes(product.id));
                                 onAddBundleToCart(comboProducts, combo.title, combo.price);
                               }}
-                              className="w-full sm:w-auto py-2 px-4 bg-[#2A2621] hover:bg-[#C5A880] text-white text-[9px] uppercase tracking-widest font-bold transition-all flex items-center justify-center gap-2"
+                              className="w-full rounded-lg bg-[#2A2621] py-2 text-xs uppercase tracking-wider text-white hover:bg-[#C5A880] transition-all"
                             >
-                              <Gift className="w-3 h-3" />
-                              Agregar
+                              Añadir al carrito
                             </button>
                           )}
                         </div>
-                      </div>
-                    </motion.div>
-                  ))}
+                      </motion.article>
+                    ))}
                 </div>
               </div>
             )}
-
           </section>
-
         </div>
-
       </div>
     </div>
   );
