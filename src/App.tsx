@@ -15,6 +15,7 @@ import CartSidebar from './components/CartSidebar';
 import AboutView from './components/AboutView';
 import AdminPanel from './components/AdminPanel';
 import FallingPetals from './components/FallingPetals';
+import OffersView from './components/OffersView';
 import { convertAndFormatPrice } from './utils/currency';
 import { productsApi } from './lib/api/products';
 import { ordersApi } from './lib/api/orders';
@@ -88,6 +89,8 @@ export default function App() {
   const [cashSessionState, setCashSessionState] = useState<CashSession | null>(DEFAULT_SESSION);
   const [socialsState, setSocialsState] = useState<SocialConfig>(DEFAULT_SOCIALS);
   const [dataLoaded, setDataLoaded] = useState(false);
+
+  const FORMULAS_CAROUSEL_CATEGORY = 'Formulas';
 
   // Load data from Supabase on mount
   useEffect(() => {
@@ -373,26 +376,29 @@ export default function App() {
 
       {/* 2. Primary Layout Render box */}
       <main className="flex-grow">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -15 }}
-            transition={{ duration: 0.45 }}
-          >
-            {activeTab === 'home' && (
+        {activeTab === 'home' ? (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              transition={{ duration: 0.45 }}
+            >
               <HomeView
                 onExploreCollection={() => setActiveTab('catalog')}
+                onExploreOffers={() => setActiveTab('offers')}
                 onViewProductDetails={(p) => setSelectedProduct(p)}
                 selectedCountryCode={selectedCountryCode}
                 products={productsArr}
                 promotionBundles={promotionsArr}
-                carouselBanners={carouselArr}
+                formulasCarouselBanners={carouselArr.filter((b) => b.category === FORMULAS_CAROUSEL_CATEGORY)}
                 onAddBundleToCart={handleAddBundleToCart}
               />
-            )}
-
+            </motion.div>
+          </AnimatePresence>
+        ) : (
+          <div key={activeTab}>
             {activeTab === 'catalog' && (
               <CatalogView
                 onAddToCart={handleAddToCart}
@@ -406,6 +412,20 @@ export default function App() {
                 bankAccount={bankAccount}
                 skinTypes={skinTypesArr}
                 onAddBundleToCart={handleAddBundleToCart}
+                enableAnimations={false}
+              />
+            )}
+
+            {activeTab === 'offers' && (
+              <OffersView
+                selectedCountryCode={selectedCountryCode}
+                products={productsArr}
+                promotionBundles={promotionsArr}
+                combos={combosArr}
+                onAddToCart={handleAddToCart}
+                onAddBundleToCart={handleAddBundleToCart}
+                onViewProductDetails={(p) => setSelectedProduct(p)}
+                enableAnimations={false}
               />
             )}
 
@@ -415,14 +435,12 @@ export default function App() {
               />
             )}
 
-            {activeTab === 'contact' && <ContactView socials={socialsState} />}
+            {activeTab === 'contact' && <ContactView socials={socialsState} enableAnimations={false} />}
 
             {activeTab === 'admin' && (
               !adminLoggedIn ? (
                 <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center px-4 py-24">
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
+                  <div
                     className="w-full max-w-md bg-white border border-[#EADCC9] p-8 sm:p-10 shadow-2xl relative text-left"
                   >
                     <div className="text-center space-y-3 mb-8">
@@ -470,7 +488,7 @@ export default function App() {
                         Sugerencia de Pruebas: ingrese <code className="bg-stone-100 px-1.5 py-0.5 rounded text-[#C5A880] font-mono font-bold">admin</code> para desbloquear la consola demo de administración con persistencia.
                       </p>
                     </div>
-                  </motion.div>
+                  </div>
                 </div>
               ) : (
                 <AdminPanel
@@ -520,10 +538,11 @@ export default function App() {
                 }}
                 selectedCountryCode={selectedCountryCode}
                 whatsAppPhone={socialsState.whatsAppPhone}
+                enableAnimations={false}
               />
             )}
-          </motion.div>
-        </AnimatePresence>
+          </div>
+        )}
       </main>
 
       {/* 3. Floating Interactive Cart Sidebar Panel */}

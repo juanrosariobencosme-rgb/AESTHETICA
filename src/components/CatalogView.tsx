@@ -1,5 +1,6 @@
 ﻿import { useState } from 'react';
 import { motion } from 'motion/react';
+import { Gift, Layers3 } from 'lucide-react';
 import { PRODUCTS } from '../data';
 import { Product, PromotionBundle, Combo, CarouselBanner, ShippingSettings, BankAccount, SkinType } from '../types';
 import { convertAndFormatPrice } from '../utils/currency';
@@ -8,6 +9,7 @@ interface CatalogViewProps {
   onAddToCart: (product: Product) => void;
   onViewProductDetails: (product: Product) => void;
   showPricesAndCart?: boolean;
+  enableAnimations?: boolean;
   selectedCountryCode?: string;
   products?: Product[];
   promotionBundles?: PromotionBundle[];
@@ -82,6 +84,7 @@ export default function CatalogView({
   promotionBundles = [],
   combos = [],
   carouselBanners = [],
+  enableAnimations = false,
   shippingSettings,
   bankAccount,
   skinTypes,
@@ -300,80 +303,85 @@ export default function CatalogView({
                   <h2 className="text-2xl font-serif text-[#2A2621]">Productos</h2>
                   <div className="flex-1 h-px bg-[#EADCC9]/50" />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                   {visibleProducts.map((product, index) => {
                     const active = product.active !== false;
+                    const savings = product.salePrice ? product.price - product.salePrice : null;
                     return (
                       <motion.article
                         key={product.id}
                         layout
-                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        transition={{ duration: 0.4, delay: index * 0.05 }}
-                        whileHover={{ y: -4, scale: 1.02 }}
-                        className={`group overflow-hidden rounded-2xl border border-[#EADCC9]/30 bg-white shadow-sm transition-all duration-300 ${active ? '' : 'opacity-60 grayscale'}`}
+                        initial={enableAnimations ? { opacity: 0, y: 20, scale: 0.95 } : undefined}
+                        animate={enableAnimations ? { opacity: 1, y: 0, scale: 1 } : undefined}
+                        transition={enableAnimations ? { duration: 0.4, delay: index * 0.05 } : undefined}
+                        whileHover={enableAnimations ? { y: -4, scale: 1.02 } : undefined}
+                        className={`group relative bg-white border border-[#EADCC9]/40 hover:border-[#C5A880]/40 overflow-hidden transition-all duration-500 flex flex-col ${active ? '' : 'opacity-60 grayscale'}`}
                       >
-                        <div className="relative h-56 overflow-hidden bg-gradient-to-br from-[#FAF8F5] to-[#F2ECE4]">
-                          <motion.img 
-                            src={product.image} 
-                            alt={product.name} 
-                            className="object-cover w-full h-full transition-transform duration-700 group-hover:scale-110" 
+                        <div className="relative h-60 overflow-hidden bg-stone-100">
+                          <motion.img
+                            src={product.image}
+                            alt={product.name}
+                            className="object-cover w-full h-full transition-transform duration-700 group-hover:scale-105 opacity-90 group-hover:opacity-100"
                             referrerPolicy="no-referrer"
-                            initial={{ scale: 1 }}
-                            whileHover={{ scale: 1.1 }}
+                            initial={enableAnimations ? { scale: 1 } : undefined}
+                            whileHover={enableAnimations ? { scale: 1.05 } : undefined}
                           />
+                          <div className="absolute inset-0 bg-gradient-to-t from-[#0F0D0B] via-[#0F0D0B]/20 to-transparent" />
                           {product.promotionTag && (
-                            <motion.span 
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              className="absolute top-3 left-3 rounded-full bg-[#C5A880]/90 backdrop-blur-sm px-3 py-1.5 text-[10px] uppercase tracking-wide text-white font-semibold shadow-sm"
-                            >
+                            <span className="absolute top-4 left-4 rounded-full bg-[#C5A880] px-3 py-1.5 text-[10px] uppercase tracking-[0.24em] text-[#1C1917] font-semibold shadow-lg">
                               {product.promotionTag}
-                            </motion.span>
+                            </span>
                           )}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                          {savings && (
+                            <div className="absolute top-4 right-4 rounded-full bg-[#1C1917]/80 px-3 py-1.5 text-[10px] uppercase tracking-[0.24em] text-white font-semibold shadow-lg">
+                              -{Math.round((savings / product.price) * 100)}%
+                            </div>
+                          )}
                         </div>
-                        <div className="p-5 space-y-3">
-                          <motion.h3 
-                            className="text-lg font-serif text-[#1C1917] group-hover:text-[#725a37] transition-colors"
-                            whileHover={{ x: 2 }}
-                          >
-                            {product.name}
-                          </motion.h3>
-                          <p className="text-xs text-[#7D7569] line-clamp-2 leading-relaxed">{product.subtitle}</p>
-                          <div className="flex items-center justify-between pt-2">
+                        <div className="p-5 space-y-4 flex flex-col flex-grow">
+                          <div className="space-y-2">
+                            <motion.h3
+                              className="text-lg font-serif text-[#2A2621] group-hover:text-[#C5A880] transition-colors"
+                              whileHover={enableAnimations ? { x: 2 } : undefined}
+                            >
+                              {product.name}
+                            </motion.h3>
+                            <p className="text-sm text-[#C5A880]/60 line-clamp-2 leading-relaxed">{product.subtitle}</p>
+                          </div>
+                          <div className="space-y-3 pt-2 border-t border-[#EADCC9]/40">
                             <div>
                               {product.salePrice ? (
                                 <div className="flex items-center gap-2">
-                                  <motion.span 
-                                    className="text-lg font-semibold text-[#2A2621]"
-                                    initial={{ scale: 1 }}
-                                    whileHover={{ scale: 1.05 }}
+                                  <motion.span
+                                    className="text-sm font-serif font-semibold text-[#C5A880]"
+                                    initial={enableAnimations ? { scale: 1 } : undefined}
+                                    whileHover={enableAnimations ? { scale: 1.02 } : undefined}
                                   >
                                     {convertAndFormatPrice(product.salePrice, selectedCountryCode)}
                                   </motion.span>
-                                  <span className="text-xs line-through text-[#A59F95]">{convertAndFormatPrice(product.price, selectedCountryCode)}</span>
+                                  <span className="text-sm line-through text-[#7D7569]">{convertAndFormatPrice(product.price, selectedCountryCode)}</span>
                                 </div>
                               ) : (
-                                <motion.span 
-                                  className="text-lg font-semibold text-[#2A2621]"
-                                  initial={{ scale: 1 }}
-                                  whileHover={{ scale: 1.05 }}
+                                <motion.span
+                                  className="text-sm font-serif font-semibold text-[#2A2621]"
+                                  initial={enableAnimations ? { scale: 1 } : undefined}
+                                  whileHover={enableAnimations ? { scale: 1.02 } : undefined}
                                 >
                                   {convertAndFormatPrice(product.price, selectedCountryCode)}
                                 </motion.span>
                               )}
                             </div>
+                            <motion.button
+                              type="button"
+                              onClick={() => onAddToCart(product)}
+                              className="w-full py-3 bg-gradient-to-r from-[#C5A880] to-[#A88B60] text-[#1C1917] text-[10px] uppercase tracking-[0.2em] font-black transition-all duration-300 hover:shadow-lg hover:shadow-[#C5A880]/20 hover:from-[#D4B990] hover:to-[#C5A880] flex items-center justify-center gap-2"
+                              whileHover={enableAnimations ? { scale: 1.02 } : undefined}
+                              whileTap={enableAnimations ? { scale: 0.98 } : undefined}
+                            >
+                              <Gift className="w-3.5 h-3.5" />
+                              Comprar
+                            </motion.button>
                           </div>
-                          <motion.button
-                            type="button"
-                            onClick={() => onAddToCart(product)}
-                            className="w-full rounded-xl bg-[#2A2621] py-2.5 text-xs uppercase tracking-wider text-white transition-all hover:bg-[#C5A880] shadow-sm"
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                          >
-                            Añadir al carrito
-                          </motion.button>
                         </div>
                       </motion.article>
                     );
@@ -388,43 +396,68 @@ export default function CatalogView({
                   <h2 className="text-2xl font-serif text-[#2A2621]">Promociones</h2>
                   <div className="flex-1 h-px bg-[#EADCC9]/50" />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {visiblePromotions.map((bundle) => (
-                    <motion.article
-                      key={bundle.id}
-                      layout
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="group overflow-hidden rounded-lg border border-[#EADCC9]/40 bg-white shadow-sm"
-                    >
-                      <div className="relative h-48 overflow-hidden bg-[#FAF8F5]">
-                        <img src={bundle.image} alt={bundle.title} className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105" referrerPolicy="no-referrer" />
-                        {bundle.tag && <span className="absolute top-3 left-3 rounded bg-[#C5A880]/90 px-2 py-1 text-[10px] uppercase tracking-wide text-white font-semibold">{bundle.tag}</span>}
-                      </div>
-                      <div className="p-4 space-y-3">
-                        <h3 className="text-lg font-serif text-[#1C1917]">{bundle.title}</h3>
-                        <p className="text-xs text-[#7D7569] line-clamp-2">{bundle.subtitle}</p>
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <span className="text-base font-semibold text-[#2A2621]">{convertAndFormatPrice(bundle.price, selectedCountryCode)}</span>
-                            {bundle.valuePrice && <span className="text-xs line-through text-[#A59F95] ml-2">{convertAndFormatPrice(bundle.valuePrice, selectedCountryCode)}</span>}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {visiblePromotions.map((bundle) => {
+                    const savings = bundle.valuePrice ? bundle.valuePrice - bundle.price : null;
+                    return (
+                      <motion.article
+                        key={bundle.id}
+                        layout
+                        initial={enableAnimations ? { opacity: 0, y: 10 } : undefined}
+                        animate={enableAnimations ? { opacity: 1, y: 0 } : undefined}
+                        className="group relative bg-white border border-[#EADCC9]/40 hover:border-[#C5A880]/40 overflow-hidden transition-all duration-500 flex flex-col"
+                      >
+                        <div className="relative h-48 overflow-hidden bg-stone-100">
+                          <img src={bundle.image} alt={bundle.title} className="object-cover w-full h-full transition-transform duration-700 group-hover:scale-105 opacity-100" referrerPolicy="no-referrer" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-[#0F0D0B] via-[#0F0D0B]/20 to-transparent" />
+                          {bundle.tag && (
+                            <span className="absolute top-3 left-3 bg-[#C5A880] text-[#1C1917] text-[9px] uppercase tracking-[0.2em] px-2.5 py-1.5 font-black shadow-lg">
+                              {bundle.tag}
+                            </span>
+                          )}
+                          {savings && (
+                            <span className="absolute top-3 right-3 rounded-full bg-[#C5A880] text-[#1C1917] text-[10px] uppercase tracking-[0.16em] px-3 py-1.5 font-bold shadow-lg">
+                              -{Math.round((savings / bundle.valuePrice!) * 100)}%
+                            </span>
+                          )}
+                          {savings && (
+                            <div className="absolute bottom-3 right-3 bg-[#1C1917]/90 border border-[#C5A880]/30 backdrop-blur-sm px-3 py-1.5 text-center">
+                              <span className="block text-[9px] text-white/40 uppercase tracking-widest">Ahorro</span>
+                              <span className="block text-sm font-bold text-[#C5A880]">{convertAndFormatPrice(savings, selectedCountryCode)}</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-5 space-y-4 flex-grow flex flex-col">
+                          <div className="flex-grow space-y-1.5">
+                            <h3 className="font-serif text-lg text-[#2A2621] group-hover:text-[#C5A880] transition-colors">{bundle.title}</h3>
+                            <p className="text-[10px] text-[#C5A880]/60 uppercase tracking-widest italic">{bundle.subtitle}</p>
+                            <p className="text-xs text-[#7D7569] line-clamp-2 leading-relaxed mt-2">{bundle.description}</p>
+                          </div>
+                          <div className="space-y-3 pt-2 border-t border-[#EADCC9]/40">
+                            <div className="flex items-center gap-2">
+                              <span className="font-serif text-sm font-light text-[#2A2621]">{convertAndFormatPrice(bundle.price, selectedCountryCode)}</span>
+                              {bundle.valuePrice && (
+                                <span className="text-sm line-through text-[#7D7569]">{convertAndFormatPrice(bundle.valuePrice, selectedCountryCode)}</span>
+                              )}
+                            </div>
+                            {onAddBundleToCart && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const bundleProducts = products.filter((product) => bundle.productIds.includes(product.id));
+                                  onAddBundleToCart(bundleProducts, bundle.title, bundle.price);
+                                }}
+                                className="w-full py-3 bg-gradient-to-r from-[#C5A880] to-[#A88B60] text-[#1C1917] text-[10px] uppercase tracking-[0.2em] font-black transition-all duration-300 hover:shadow-lg hover:shadow-[#C5A880]/20 hover:from-[#D4B990] hover:to-[#C5A880] flex items-center justify-center gap-2"
+                              >
+                                <Gift className="w-3.5 h-3.5" />
+                                Comprar
+                              </button>
+                            )}
                           </div>
                         </div>
-                        {onAddBundleToCart && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const bundleProducts = products.filter((product) => bundle.productIds.includes(product.id));
-                              onAddBundleToCart(bundleProducts, bundle.title, bundle.price);
-                            }}
-                            className="w-full rounded-lg bg-[#2A2621] py-2 text-xs uppercase tracking-wider text-white hover:bg-[#C5A880] transition-all"
-                          >
-                            Añadir al carrito
-                          </button>
-                        )}
-                      </div>
-                    </motion.article>
-                  ))}
+                      </motion.article>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -435,43 +468,57 @@ export default function CatalogView({
                   <h2 className="text-2xl font-serif text-[#2A2621]">Combos</h2>
                   <div className="flex-1 h-px bg-[#EADCC9]/50" />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {visibleCombos.map((combo) => (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {visibleCombos.map((combo) => {
+                    const savings = combo.valuePrice ? combo.valuePrice - combo.price : null;
+                    return (
                       <motion.article
                         key={combo.id}
                         layout
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="group overflow-hidden rounded-lg border border-[#EADCC9]/40 bg-white shadow-sm"
+                        initial={enableAnimations ? { opacity: 0, y: 10 } : undefined}
+                        animate={enableAnimations ? { opacity: 1, y: 0 } : undefined}
+                        className="group relative bg-white border border-[#EADCC9]/40 hover:border-[#C5A880]/40 overflow-hidden transition-all duration-500 flex flex-col"
                       >
-                        <div className="relative h-48 overflow-hidden bg-[#FAF8F5]">
-                          <img src={combo.image} alt={combo.title} className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105" referrerPolicy="no-referrer" />
-                          {combo.tag && <span className="absolute top-3 left-3 rounded bg-[#C5A880]/90 px-2 py-1 text-[10px] uppercase tracking-wide text-white font-semibold">{combo.tag}</span>}
-                        </div>
-                        <div className="p-4 space-y-3">
-                          <h3 className="text-lg font-serif text-[#1C1917]">{combo.title}</h3>
-                          <p className="text-xs text-[#7D7569] line-clamp-2">{combo.subtitle}</p>
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <span className="text-base font-semibold text-[#2A2621]">{convertAndFormatPrice(combo.price, selectedCountryCode)}</span>
-                              {combo.valuePrice && <span className="text-xs line-through text-[#A59F95] ml-2">{convertAndFormatPrice(combo.valuePrice, selectedCountryCode)}</span>}
-                            </div>
-                          </div>
-                          {onAddBundleToCart && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const comboProducts = products.filter((product) => combo.productIds.includes(product.id));
-                                onAddBundleToCart(comboProducts, combo.title, combo.price);
-                              }}
-                              className="w-full rounded-lg bg-[#2A2621] py-2 text-xs uppercase tracking-wider text-white hover:bg-[#C5A880] transition-all"
-                            >
-                              Añadir al carrito
-                            </button>
+                        <div className="relative h-48 overflow-hidden bg-stone-100">
+                          <img src={combo.image} alt={combo.title} className="object-cover w-full h-full transition-transform duration-700 group-hover:scale-105 opacity-100" referrerPolicy="no-referrer" />
+                          {combo.tag && <span className="absolute top-3 left-3 rounded-full bg-[#C5A880] text-[#1C1917] text-[9px] uppercase tracking-[0.2em] px-3 py-1.5 font-bold shadow-lg">{combo.tag}</span>}
+                          {savings && (
+                            <span className="absolute top-3 right-3 rounded-full bg-[#C5A880] text-[#1C1917] text-[10px] uppercase tracking-[0.16em] px-3 py-1.5 font-bold shadow-lg">
+                              -{Math.round((savings / combo.valuePrice!) * 100)}%
+                            </span>
                           )}
                         </div>
+                        <div className="p-5 space-y-4 flex-grow flex flex-col">
+                          <div className="flex-grow space-y-1.5">
+                            <h3 className="text-lg font-serif text-[#2A2621] group-hover:text-[#C5A880] transition-colors">{combo.title}</h3>
+                            <p className="text-[10px] text-[#C5A880]/60 uppercase tracking-widest italic">{combo.subtitle}</p>
+                            <p className="text-xs text-[#7D7569] line-clamp-2 leading-relaxed mt-2">{combo.description}</p>
+                          </div>
+                          <div className="space-y-3 pt-2 border-t border-[#EADCC9]/40">
+                            <div className="flex items-center gap-2">
+                              <span className="font-serif text-sm font-light text-[#2A2621]">{convertAndFormatPrice(combo.price, selectedCountryCode)}</span>
+                              {combo.valuePrice && (
+                                <span className="text-sm line-through text-[#7D7569]">{convertAndFormatPrice(combo.valuePrice, selectedCountryCode)}</span>
+                              )}
+                            </div>
+                            {onAddBundleToCart && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const comboProducts = products.filter((product) => combo.productIds.includes(product.id));
+                                  onAddBundleToCart(comboProducts, combo.title, combo.price);
+                                }}
+                                className="w-full py-3 bg-gradient-to-r from-[#C5A880] to-[#A88B60] text-[#1C1917] text-[10px] uppercase tracking-[0.2em] font-black transition-all duration-300 hover:shadow-lg hover:shadow-[#C5A880]/20 hover:from-[#D4B990] hover:to-[#C5A880] flex items-center justify-center gap-2"
+                              >
+                                <Layers3 className="w-3.5 h-3.5" />
+                                Comprar
+                              </button>
+                            )}
+                          </div>
+                        </div>
                       </motion.article>
-                    ))}
+                    );
+                  })}
                 </div>
               </div>
             )}

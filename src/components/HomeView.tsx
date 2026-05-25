@@ -7,26 +7,27 @@ import { convertAndFormatPrice } from '../utils/currency';
 
 interface HomeViewProps {
   onExploreCollection: () => void;
+  onExploreOffers: () => void;
   onViewProductDetails: (product: Product) => void;
   selectedCountryCode?: string;
   products?: Product[];
   promotionBundles?: PromotionBundle[];
   carouselBanners?: CarouselBanner[];
+  formulasCarouselBanners?: CarouselBanner[];
   onAddBundleToCart?: (products: Product[], customName: string, customPrice: number) => void;
 }
 
 export default function HomeView({ 
   onExploreCollection, 
+  onExploreOffers,
   onViewProductDetails,
   selectedCountryCode = 'DO',
   products = PRODUCTS,
   promotionBundles = [],
   carouselBanners = [],
+  formulasCarouselBanners = [],
   onAddBundleToCart
 }: HomeViewProps) {
-  // Highlight three products on home screen
-  const featuredProducts = products.slice(0, 3);
-
   const getProductQuote = (productName: string): string => {
     const quotes: Record<string, string> = {
       'Lumière Dorée': 'Tratamiento concentrado con péptidos y partículas finas de oro 24K para un brillo de seda.',
@@ -103,17 +104,9 @@ export default function HomeView({
     quote: getProductQuote(product.name)
   }));
 
-  const homeCarouselItems: HomeCarouselItem[] = carouselBanners.length > 0
-    ? carouselBanners.map((banner) => ({
-        id: banner.id,
-        image: banner.image,
-        title: banner.title,
-        description: banner.description,
-        buttonText: banner.buttonText,
-        buttonUrl: banner.buttonUrl,
-        product: banner.relatedProductId ? products.find((p) => p.id === banner.relatedProductId) : undefined
-      }))
-    : defaultCarouselItems;
+  // Nota: el carrusel principal (hero) se alimenta SOLO del inventario (products),
+  // no de la tabla de banners en Supabase.
+  const homeCarouselItems: HomeCarouselItem[] = defaultCarouselItems;
 
   const [carouselIndex, setCarouselIndex] = useState(0);
 
@@ -133,6 +126,30 @@ export default function HomeView({
   };
 
   const activeCarousel = homeCarouselItems[carouselIndex];
+
+  // === Carrusel secundario: Fórmulas Destacadas (independiente del inicio) ===
+  const formulasCarouselItems = formulasCarouselBanners || [];
+  const [formulasIndex, setFormulasIndex] = useState(0);
+
+  useEffect(() => {
+    if (!formulasCarouselItems || formulasCarouselItems.length <= 1) return;
+    const timer = setInterval(() => {
+      setFormulasIndex((prev) => (prev + 1) % formulasCarouselItems.length);
+    }, 6500);
+    return () => clearInterval(timer);
+  }, [formulasCarouselItems.length]);
+
+  const handleFormulasPrev = () => {
+    if (!formulasCarouselItems.length) return;
+    setFormulasIndex((prev) => (prev - 1 + formulasCarouselItems.length) % formulasCarouselItems.length);
+  };
+
+  const handleFormulasNext = () => {
+    if (!formulasCarouselItems.length) return;
+    setFormulasIndex((prev) => (prev + 1) % formulasCarouselItems.length);
+  };
+
+  const activeFormulaBanner = formulasCarouselItems[formulasIndex];
 
   return (
     <div className="bg-[#FAF8F5] text-[#2A2621]">
@@ -350,96 +367,110 @@ export default function HomeView({
         </div>
       </section>
 
-      {/* 3. Product Spotlight Catalog */}
-      <section className="py-16 md:py-20 lg:py-24 bg-[#F2ECE4]/40 border-y border-[#EADCC9]/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8 md:space-y-12">
-          
-          <div className="space-y-3 max-w-2xl mx-auto">
-            <span className="text-[10px] uppercase tracking-[0.3em] text-[#C5A880] font-bold">
-              Nuestra Selección Privada
-            </span>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif text-[#1C1917]">
-              Fórmulas Destacadas
-            </h2>
-            <p className="text-xs sm:text-sm text-[#7D7569]">
-              Nuestras emulsiones más deseadas de la temporada, infundidas con biocosmética molecular avanzada y oro alquímico.
-            </p>
-          </div>
+      {/* 3. Galería — Full-bleed Banner Carousel */}
+      <section className="relative bg-[#0F0D0B] overflow-hidden">
 
-          {/* Catalog Selection Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
-            {featuredProducts.map((p, index) => (
-              <motion.div
-                key={p.id}
-                whileInView={{ opacity: 1, y: 0 }}
-                initial={{ opacity: 0, y: 50 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: index * 0.15 }}
-                className="group flex flex-col justify-between bg-[#FAF8F5] border border-[#EADCC9]/50 overflow-hidden shadow-xs hover:shadow-md transition-all duration-300"
-              >
-                {/* Product Image Panel */}
-                <div className="relative aspect-4/5 overflow-hidden bg-stone-100 border-b border-[#EADCC9]/40">
-                  <span className="absolute top-4 left-4 z-10 bg-[#FAF8F5]/90 backdrop-blur-xs text-[9px] uppercase tracking-[0.25em] text-[#C5A880] px-3 py-1 font-semibold">
-                    {p.size}
+        {/* Banners carousel — full width, tall images */}
+        {formulasCarouselItems.length > 0 && activeFormulaBanner ? (
+          <div className="relative w-full min-h-[420px] sm:min-h-[520px] md:min-h-[600px] lg:min-h-[680px] group">
+
+            {/* Images */}
+            <AnimatePresence mode="wait">
+              <motion.img
+                key={activeFormulaBanner.id}
+                src={activeFormulaBanner.image}
+                alt={activeFormulaBanner.title || 'Galería'}
+                initial={{ opacity: 0, scale: 1.06 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.9, ease: 'easeInOut' }}
+                className="absolute inset-0 w-full h-full object-cover select-none"
+                referrerPolicy="no-referrer"
+              />
+            </AnimatePresence>
+
+            {/* Gradient overlays */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0F0D0B] via-[#0F0D0B]/25 to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0F0D0B]/50 via-transparent to-transparent pointer-events-none" />
+
+            {/* Section heading overlay — bottom-left */}
+            <div className="absolute bottom-0 left-0 right-0 z-10 px-6 sm:px-10 lg:px-16 pb-10 sm:pb-14 pointer-events-none">
+              <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-end justify-between gap-6">
+
+                {/* Text */}
+                <div className="space-y-3">
+                  <span className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.35em] text-[#C5A880] font-bold">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#C5A880]" />
+                    Galería Sensorial
                   </span>
-                  <img
-                    src={p.image}
-                    alt={p.name}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    referrerPolicy="no-referrer"
-                  />
-                  {/* Quick-View Shield overlay */}
-                  <div className="absolute inset-0 bg-[#2A2621]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                    <button
-                      onClick={() => onViewProductDetails(p)}
-                      className="px-6 py-3 bg-[#FAF8F5] text-stone-900 text-[10px] uppercase tracking-[0.2em] font-medium transition-all transform translate-y-2 group-hover:translate-y-0"
-                    >
-                      Ver Elixir
-                    </button>
-                  </div>
+                  <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif text-white tracking-wide leading-[1.1]">
+                    Nuestros Elixires
+                  </h2>
+                  {activeFormulaBanner.title && (
+                    <p className="text-sm sm:text-base text-white/50 max-w-md font-light leading-relaxed">
+                      {activeFormulaBanner.title}
+                    </p>
+                  )}
                 </div>
 
-                {/* Info block */}
-                <div className="p-6 space-y-3 bg-[#FAF8F5]">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="font-serif text-lg text-[#1C1917] group-hover:text-[#C5A880] transition-colors">
-                        {p.name}
-                      </h3>
-                      <p className="text-[11px] text-[#C5A880] uppercase tracking-wider italic">
-                        {p.subtitle}
-                      </p>
-                    </div>
-                    <span className="font-mono text-sm text-[#1C1917] font-semibold">{convertAndFormatPrice(p.price, selectedCountryCode)}</span>
-                  </div>
-                  
-                  <p className="text-xs text-[#7D7569] line-clamp-2 leading-relaxed font-light">
-                    {p.description}
-                  </p>
-
-                  <div className="border-t border-[#EADCC9]/30 pt-4 flex justify-between items-center">
-                    <span className="text-[9px] uppercase tracking-[0.15em] text-[#7D7569] bg-[#F2ECE4]/60 px-2 py-0.5">
-                      Textura: {p.texture.split(' ')[0]}
-                    </span>
-                    <button
-                      onClick={() => onViewProductDetails(p)}
-                      className="text-[10px] uppercase tracking-[0.15em] text-[#2A2621] font-bold border-b border-[#C5A880] transition-colors"
-                    >
-                      Detalle Completo →
-                    </button>
-                  </div>
+                {/* Counter badge */}
+                <div className="pointer-events-auto text-right">
+                  <span className="text-xs font-mono text-white/40">
+                    <span className="text-[#C5A880] font-bold text-lg">{String(formulasIndex + 1).padStart(2, '0')}</span>
+                    <span className="mx-1">/</span>
+                    {String(formulasCarouselItems.length).padStart(2, '0')}
+                  </span>
                 </div>
-              </motion.div>
-            ))}
+              </div>
+            </div>
+
+            {/* Nav arrows */}
+            <button
+              onClick={handleFormulasPrev}
+              className="absolute left-4 sm:left-8 top-1/2 -translate-y-1/2 w-11 h-11 sm:w-14 sm:h-14 rounded-full border border-white/20 bg-black/30 hover:bg-black/60 backdrop-blur-md text-white flex items-center justify-center transition-all focus:outline-none cursor-pointer z-20 opacity-0 group-hover:opacity-100 duration-500"
+              aria-label="Anterior"
+            >
+              <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+            </button>
+            <button
+              onClick={handleFormulasNext}
+              className="absolute right-4 sm:right-8 top-1/2 -translate-y-1/2 w-11 h-11 sm:w-14 sm:h-14 rounded-full border border-white/20 bg-black/30 hover:bg-black/60 backdrop-blur-md text-white flex items-center justify-center transition-all focus:outline-none cursor-pointer z-20 opacity-0 group-hover:opacity-100 duration-500"
+              aria-label="Siguiente"
+            >
+              <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
+            </button>
+
+            {/* Dot indicators */}
+            <div className="absolute bottom-4 left-0 right-0 flex justify-center space-x-2 z-20">
+              {formulasCarouselItems.map((_, dotIdx) => (
+                <button
+                  key={dotIdx}
+                  onClick={() => setFormulasIndex(dotIdx)}
+                  className={`h-[3px] rounded-full transition-all duration-500 cursor-pointer ${
+                    dotIdx === formulasIndex ? 'bg-[#C5A880] w-8' : 'bg-white/30 w-2'
+                  }`}
+                  aria-label={`Ir a la imagen ${dotIdx + 1}`}
+                />
+              ))}
+            </div>
           </div>
-
-          <button
-            onClick={onExploreCollection}
-            className="inline-flex py-4 px-10 border border-[#2A2621] text-xs uppercase tracking-[0.2em] hover:bg-[#2A2621] hover:text-white transition-colors duration-500 font-medium"
-          >
-            Ver Colección Completa
-          </button>
-        </div>
+        ) : (
+          /* Empty state — keeps the section visible even without banners */
+          <div className="py-20 px-6 text-center">
+            <div className="max-w-md mx-auto space-y-4">
+              <span className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.35em] text-[#C5A880]/60 font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#C5A880]/40" />
+                Galería Sensorial
+              </span>
+              <h2 className="text-2xl font-serif text-white/30 tracking-wide">
+                Nuestros Elixires
+              </h2>
+              <p className="text-xs text-white/20 leading-relaxed">
+                No hay imágenes cargadas todavía. Agrégalas desde <strong className="text-white/30">Admin → Banners / Carrusel</strong>.
+              </p>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* 3.5. Promotions Section */}
@@ -460,19 +491,28 @@ export default function HomeView({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 text-left">
-              {promotionBundles.slice(0, 3).map((bundle, index) => (
-                <motion.div
-                  key={bundle.id}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  initial={{ opacity: 0, y: 50 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: index * 0.15 }}
-                  className="group flex flex-col justify-between bg-[#FAF8F5] border border-[#EADCC9]/50 overflow-hidden shadow-xs hover:shadow-md transition-all duration-300"
-                >
+              {promotionBundles.slice(0, 3).map((bundle, index) => {
+                const savingsPercent = bundle.valuePrice
+                  ? Math.round(((bundle.valuePrice - bundle.price) / bundle.valuePrice) * 100)
+                  : null;
+                return (
+                  <motion.div
+                    key={bundle.id}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0, y: 50 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6, delay: index * 0.15 }}
+                    className="group flex flex-col justify-between bg-[#FAF8F5] border border-[#EADCC9]/50 overflow-hidden shadow-xs hover:shadow-md transition-all duration-300"
+                  >
                   <div className="relative aspect-4/5 overflow-hidden bg-stone-100 border-b border-[#EADCC9]/40 min-h-[300px]">
                     {bundle.tag && (
                       <span className="absolute top-4 left-4 z-10 bg-[#FAF8F5]/90 backdrop-blur-xs text-[9px] uppercase tracking-[0.25em] text-[#C5A880] px-3 py-1 font-semibold">
                         {bundle.tag}
+                      </span>
+                    )}
+                    {savingsPercent && (
+                      <span className="absolute top-4 right-4 z-10 bg-[#C5A880] text-[#1C1917] text-[9px] uppercase tracking-[0.25em] px-3 py-1 font-bold rounded-full shadow-lg">
+                        -{savingsPercent}%
                       </span>
                     )}
                     <img
@@ -519,20 +559,21 @@ export default function HomeView({
                           className="w-full py-3 bg-[#2A2621] hover:bg-[#C5A880] text-white text-[10px] uppercase tracking-[0.2em] font-bold transition-all flex items-center justify-center gap-2 shadow-md"
                         >
                           <Gift className="w-4 h-4" />
-                          Agregar Promoción
+                          Comprar
                         </button>
                       )}
                     </div>
                   </div>
                 </motion.div>
-              ))}
+              );
+              })}
             </div>
 
             <button
-              onClick={() => window.location.hash = '#promotions'}
+              onClick={onExploreOffers}
               className="inline-flex py-4 px-8 sm:px-10 border border-[#2A2621] text-xs uppercase tracking-[0.2em] hover:bg-[#2A2621] hover:text-white transition-colors duration-500 font-medium"
             >
-              Ver Todas las Promociones
+              Ver Promociones
             </button>
           </div>
         </section>

@@ -513,7 +513,9 @@ export default function AdminPanel({
       buttonText: newBannerButtonText,
       buttonUrl: newBannerButtonUrl,
       priority: Number(newBannerPriority),
-      active: newBannerActive
+      active: newBannerActive,
+      // Importante: estos banners son SOLO para el carrusel independiente de “Fórmulas Destacadas”
+      category: 'Formulas'
     };
 
     try {
@@ -1762,7 +1764,7 @@ export default function AdminPanel({
                 <div className="flex justify-between items-center border-b border-[#EADCC9]/30 pb-4">
                   <div>
                     <h2 className="font-serif text-xl text-[#2A2621] tracking-tight">Carrusel y Banners</h2>
-                    <p className="text-[10px] text-[#7D7569] mt-0.5">Publica banners que aparecen en la página de inicio.</p>
+                    <p className="text-[10px] text-[#7D7569] mt-0.5">Publica banners SOLO para el carrusel independiente de “Fórmulas destacadas”.</p>
                   </div>
                   <button
                     onClick={() => setCreatingBanner(!creatingBanner)}
@@ -1809,13 +1811,17 @@ export default function AdminPanel({
                   </form>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {carousel.map(banner => (
+                {(() => {
+                  const formulasBanners = carousel.filter((b) => b.category === 'Formulas');
+
+                  const renderBannerCard = (banner: any) => (
                     <div key={banner.id} className="border border-[#EADCC9]/50 p-4 rounded bg-[#FAF8F5]/80">
                       <div className="flex justify-between items-start gap-4 mb-3">
                         <div>
                           <h3 className="font-semibold text-stone-900">{banner.title}</h3>
-                          <p className="text-[10px] text-stone-500">Prioridad {banner.priority}</p>
+                          <p className="text-[10px] text-stone-500">
+                            Prioridad {banner.priority} · {banner.category === 'Formulas' ? 'Fórmulas' : 'Inicio'}
+                          </p>
                         </div>
                         <button onClick={() => handleDeleteBanner(banner.id)} className="text-stone-400 hover:text-rose-600"><Trash2 className="w-4 h-4" /></button>
                       </div>
@@ -1824,8 +1830,22 @@ export default function AdminPanel({
                       <p className="text-[11px] font-bold">{banner.buttonText}</p>
                       <div className="text-[10px] mt-2 text-stone-500">{banner.active ? 'Activo' : 'Inactivo'}</div>
                     </div>
-                  ))}
-                </div>
+                  );
+
+                  return (
+                    <div className="space-y-8">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-[11px] uppercase tracking-widest font-bold text-stone-700">Fórmulas destacadas (Cartelera)</h3>
+                          <span className="text-[10px] text-stone-500">{formulasBanners.length} banners</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {formulasBanners.map(renderBannerCard)}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             )}
 
@@ -1849,7 +1869,7 @@ export default function AdminPanel({
                   </div>
                   <div className="sm:col-span-2">
                     <label className="text-[10px] uppercase tracking-widest text-stone-700 font-bold block mb-2">Palabras clave para Distrito</label>
-                    <input value={shippingKeywordsText} onChange={e => setShippingKeywordsText(e.target.value)} className="w-full p-3 border" placeholder="Distrito, Santo Domingo, DN" />
+                    <input value={shippingKeywordsText} onChange={e => setShippingKeywordsText(e.target.value)} className="w-full p-3 border" placeholder="Distrito, Santo Domingo, Zona, Colonia" />
                   </div>
                 </div>
                 <button onClick={handleSaveShippingSettings} className="py-3 px-4 bg-[#2A2621] hover:bg-[#C5A880] text-white uppercase tracking-widest text-[10px] font-bold">Guardar ajustes de envío</button>

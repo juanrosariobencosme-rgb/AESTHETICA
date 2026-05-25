@@ -10,13 +10,15 @@ interface OrderSuccessViewProps {
   onReturnHome: () => void;
   selectedCountryCode?: string;
   whatsAppPhone?: string;
+  enableAnimations?: boolean;
 }
 
 export default function OrderSuccessView({ 
   orderInfo, 
   onReturnHome,
   selectedCountryCode = 'DO',
-  whatsAppPhone = '18294855693'
+  whatsAppPhone = '18294855693',
+  enableAnimations = false
 }: OrderSuccessViewProps) {
   const [copied, setCopied] = useState(false);
   const [voucherFile, setVoucherFile] = useState<File | null>(null);
@@ -441,9 +443,9 @@ export default function OrderSuccessView({
                     {!voucherFile && !uploading && (
                       <motion.div
                         key="idle"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
+                        initial={enableAnimations ? { opacity: 0 } : undefined}
+                        animate={enableAnimations ? { opacity: 1 } : undefined}
+                        exit={enableAnimations ? { opacity: 0 } : undefined}
                         className="flex flex-col items-center"
                       >
                         <CloudUpload className="text-4xl text-outline mb-3 group-hover:text-primary transition-colors stroke-[1.3]" />
@@ -457,8 +459,8 @@ export default function OrderSuccessView({
                     {uploading && (
                       <motion.div
                         key="loading"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
+                        initial={enableAnimations ? { opacity: 0 } : undefined}
+                        animate={enableAnimations ? { opacity: 1 } : undefined}
                         className="flex flex-col items-center space-y-2"
                       >
                         <div className="w-8 h-8 rounded-full border-2 border-t-primary border-outline-variant animate-spin" />
@@ -469,8 +471,8 @@ export default function OrderSuccessView({
                     {uploadSuccess && (
                       <motion.div
                         key="success"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
+                        initial={enableAnimations ? { opacity: 0 } : undefined}
+                        animate={enableAnimations ? { opacity: 1 } : undefined}
                         className="flex flex-col items-center"
                       >
                         <FileCheck className="text-3xl text-secondary mb-2 stroke-[1.5]" />

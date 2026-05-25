@@ -252,10 +252,33 @@ export default function CheckoutView({
                 {paymentMethod === 'transfer' && (
                   <section className="mt-6">
                     <header className="mb-4">
-                      <h2 className="font-serif text-lg text-on-surface mb-2 font-light">Comprobante de Transferencia</h2>
-                      <p className="text-xs text-on-surface-variant">Adjunta tu comprobante para completar el pedido con mayor rapidez.</p>
+                      <h2 className="font-serif text-lg text-on-surface mb-2 font-light">Instrucciones de Pago</h2>
+                      <p className="text-xs text-on-surface-variant">Para procesar tu envío, por favor realiza la transferencia a la siguiente cuenta y adjunta tu comprobante.</p>
                     </header>
-                    <div className="space-y-4">
+                    
+                    {bankAccount && (
+                      <div className="rounded-xl border border-outline-variant/60 bg-surface-container-low p-6 text-[12px] mt-4 space-y-3">
+                        <div className="flex justify-between items-center">
+                          <p className="text-[11px] uppercase tracking-[0.25em] text-[#7D7569] font-bold">Datos Bancarios</p>
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              const text = `Banco: ${bankAccount.bankType}\nBeneficiario: ${bankAccount.beneficiary}\nCLABE: ${bankAccount.clabe || bankAccount.accountNumber}`;
+                              navigator.clipboard.writeText(text);
+                            }}
+                            className="text-[10px] uppercase tracking-widest text-primary font-bold hover:underline"
+                          >
+                            Copiar
+                          </button>
+                        </div>
+                        <p className="text-on-surface"><strong>Banco:</strong> {bankAccount.bankType}</p>
+                        <p className="text-on-surface"><strong>Beneficiario:</strong> {bankAccount.beneficiary}</p>
+                        <p className="text-on-surface"><strong>CLABE Interbancaria:</strong> {bankAccount.clabe || bankAccount.accountNumber}</p>
+                      </div>
+                    )}
+
+                    <div className="space-y-4 mt-6">
+                      <label className="text-[10px] uppercase tracking-[0.15em] font-semibold text-outline">Adjuntar Comprobante</label>
                       <input
                         type="file"
                         accept="image/*,.pdf"
@@ -264,7 +287,7 @@ export default function CheckoutView({
                             setVoucherFile(e.target.files[0]);
                           }
                         }}
-                        className="w-full text-sm text-on-surface"
+                        className="w-full text-sm text-on-surface border border-outline-variant/30 p-2 rounded"
                       />
                       {voucherFile && (
                         <p className="text-[11px] text-on-surface-variant">
@@ -272,15 +295,6 @@ export default function CheckoutView({
                         </p>
                       )}
                     </div>
-                    {bankAccount && (
-                      <div className="rounded-xl border border-outline-variant/60 bg-surface-container-low p-4 text-[11px] mt-4">
-                        <p className="text-[11px] uppercase tracking-[0.25em] text-[#7D7569] font-bold mb-2">Datos Bancarios</p>
-                        <p className="text-on-surface"><strong>Banco:</strong> {bankAccount.bankType}</p>
-                        <p className="text-on-surface"><strong>Beneficiario:</strong> {bankAccount.beneficiary}</p>
-                        <p className="text-on-surface"><strong>Cuenta:</strong> {bankAccount.accountNumber}</p>
-                        {bankAccount.clabe && <p className="text-on-surface"><strong>CLABE:</strong> {bankAccount.clabe}</p>}
-                      </div>
-                    )}
                   </section>
                 )}
               </section>

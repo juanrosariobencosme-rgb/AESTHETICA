@@ -5,9 +5,10 @@ import { SocialConfig } from '../types';
 
 interface ContactViewProps {
   socials?: SocialConfig;
+  enableAnimations?: boolean;
 }
 
-export default function ContactView({ socials: propSocials }: ContactViewProps) {
+export default function ContactView({ socials: propSocials, enableAnimations = false }: ContactViewProps) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -209,9 +210,9 @@ export default function ContactView({ socials: propSocials }: ContactViewProps) 
               {!sent ? (
                 <motion.form
                   key="form"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
+                  initial={enableAnimations ? { opacity: 0 } : undefined}
+                  animate={enableAnimations ? { opacity: 1 } : undefined}
+                  exit={enableAnimations ? { opacity: 0 } : undefined}
                   onSubmit={handleSendMessage}
                   className="flex flex-col gap-8 relative z-10"
                 >
@@ -288,8 +289,8 @@ export default function ContactView({ socials: propSocials }: ContactViewProps) 
               ) : (
                 <motion.div
                   key="success"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
+                  initial={enableAnimations ? { opacity: 0, scale: 0.95 } : undefined}
+                  animate={enableAnimations ? { opacity: 1, scale: 1 } : undefined}
                   className="bg-primary/5 p-8 text-center border border-primary/20 space-y-4"
                 >
                   <div className="w-12 h-12 bg-secondary text-white rounded-full flex items-center justify-center mx-auto">
