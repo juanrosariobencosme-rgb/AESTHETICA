@@ -17,8 +17,57 @@ function toDbProduct(product: Product | Partial<Product>): any {
     ...(product.concern !== undefined ? { concern: product.concern } : {}),
     ...(product.rating !== undefined ? { rating: product.rating } : {}),
     ...(product.texture !== undefined ? { texture: product.texture } : {}),
-    ...(product.stock !== undefined ? { stock: product.stock } : {})
+    ...(product.stock !== undefined && product.stock !== null ? { stock: product.stock } : {})
   };
+}
+
+function isSchemaCacheMissingColumn(error: any): boolean {
+  const msg = String(error?.message || '');
+  return error?.code === 'PGRST204' || msg.includes('schema cache') || msg.includes('Could not find the');
+}
+
+function extractMissingColumnName(error: any): string | null {
+  const msg = String(error?.message || '');
+  const match = msg.match(/Could not find the '([^']+)' column/i);
+  return match?.[1] ?? null;
+}
+
+function omitKey(obj: any, key: string): any {
+  if (!obj || typeof obj !== 'object') return obj;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { [key]: _ignored, ...rest } = obj;
+  return rest;
+}
+
+async function retryWithoutMissingColumns<T>(
+  exec: (payload: any) => Promise<{ data: T; error: any }>,
+  payload: any,
+  maxIterations = 6
+): Promise<{ data: T; error: any; payload: any }> {
+  let currentPayload = payload;
+  let last = await exec(currentPayload);
+
+  for (let i = 0; i < maxIterations && last.error && isSchemaCacheMissingColumn(last.error); i++) {
+    const missing = extractMissingColumnName(last.error);
+    if (!missing) break;
+
+    if (Array.isArray(currentPayload)) {
+      currentPayload = currentPayload.map((row) => omitKey(row, missing));
+    } else {
+      currentPayload = omitKey(currentPayload, missing);
+    }
+
+    last = await exec(currentPayload);
+  }
+
+  return { ...last, payload: currentPayload };
+}
+
+function shouldRetryWithStockDefault(error: any): boolean {
+  return (
+    error?.code === '23502' ||
+    (typeof error?.message === 'string' && error.message.includes('null value in column "stock"'))
+  );
 }
 
 export const productsApi = {
@@ -64,13 +113,18 @@ export const productsApi = {
   async create(product: Product): Promise<Product> {
     try {
       console.log('Creating product:', product);
-      const dbProduct = toDbProduct(product);
+      let dbProduct = toDbProduct(product);
       
-      const { data, error } = await supabase
-        .from('products')
-        .insert(dbProduct)
-        .select()
-        .single();
+      let { data, error, payload } = await retryWithoutMissingColumns(
+        async (p) => supabase.from('products').insert(p).select().single(),
+        dbProduct
+      );
+      dbProduct = payload;
+
+      if (error && shouldRetryWithStockDefault(error)) {
+        dbProduct = { ...dbProduct, stock: product.stock ?? 0 };
+        ({ data, error } = await supabase.from('products').insert(dbProduct).select().single());
+      }
       
       if (error) {
         console.error('Error creating product:', error);
@@ -88,14 +142,13 @@ export const productsApi = {
   async update(id: string, product: Partial<Product>): Promise<Product> {
     try {
       console.log('Updating product:', id, product);
-      const dbProduct = toDbProduct(product);
+      let dbProduct = toDbProduct(product);
       
-      const { data, error } = await supabase
-        .from('products')
-        .update(dbProduct)
-        .eq('id', id)
-        .select()
-        .single();
+      const { data, error, payload } = await retryWithoutMissingColumns(
+        async (p) => supabase.from('products').update(p).eq('id', id).select().single(),
+        dbProduct
+      );
+      dbProduct = payload;
       
       if (error) {
         console.error('Error updating product:', error);
@@ -134,12 +187,22 @@ export const productsApi = {
   async upsert(products: Product[]): Promise<Product[]> {
     try {
       console.log('Upserting products:', products.length);
-      const dbProducts = products.map(toDbProduct);
+      let dbProducts = products.map(toDbProduct);
       
-      const { data, error } = await supabase
-        .from('products')
-        .upsert(dbProducts, { onConflict: 'id' })
-        .select();
+      let result = await retryWithoutMissingColumns(
+        async (p) => supabase.from('products').upsert(p, { onConflict: 'id' }).select(),
+        dbProducts
+      );
+      let { data, error, payload } = result;
+      dbProducts = payload;
+
+      if (error && shouldRetryWithStockDefault(error)) {
+        dbProducts = dbProducts.map((product) => ({
+          ...product,
+          stock: product.stock ?? 0
+        }));
+        ({ data, error } = await supabase.from('products').upsert(dbProducts, { onConflict: 'id' }).select());
+      }
       
       if (error) {
         console.error('Error upserting products:', error);

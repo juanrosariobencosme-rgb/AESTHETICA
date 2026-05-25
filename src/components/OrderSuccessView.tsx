@@ -1,15 +1,25 @@
 import { useState, useRef, DragEvent, ChangeEvent } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Check, ClipboardCopy, Send, CloudUpload, FileCheck, Download } from 'lucide-react';
-import { CartItem } from '../types';
+import { CartItem, BankAccount } from '../types';
 import { convertAndFormatPrice } from '../utils/currency';
 import jsPDF from 'jspdf';
 
 interface OrderSuccessViewProps {
-  orderInfo: { name: string; email: string; paymentMethod: string; finalTotal: number; items?: CartItem[] } | null;
+  orderInfo: {
+    name: string;
+    email: string;
+    paymentMethod: string;
+    finalTotal: number;
+    items?: CartItem[];
+    shippingCost?: number;
+    tax?: number;
+    shippingZone?: string;
+  } | null;
   onReturnHome: () => void;
   selectedCountryCode?: string;
   whatsAppPhone?: string;
+  bankAccount?: BankAccount;
   enableAnimations?: boolean;
 }
 
@@ -18,6 +28,7 @@ export default function OrderSuccessView({
   onReturnHome,
   selectedCountryCode = 'DO',
   whatsAppPhone = '18294855693',
+  bankAccount,
   enableAnimations = false
 }: OrderSuccessViewProps) {
   const [copied, setCopied] = useState(false);
@@ -28,10 +39,16 @@ export default function OrderSuccessView({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const orderNumber = "AES-84920";
-  const clabeNumber = "012 345 6789 0123 4567";
+  const displayBankAccount: BankAccount = bankAccount ?? {
+    bankType: 'Banco Premium S.A.',
+    beneficiary: 'Aesthetica Rituals S.A. de C.V.',
+    accountNumber: '',
+    clabe: '012 345 6789 0123 4567',
+    active: true,
+  };
 
   const handleCopyClabe = () => {
-    navigator.clipboard.writeText(clabeNumber);
+    navigator.clipboard.writeText(displayBankAccount.clabe || displayBankAccount.accountNumber || '');
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -109,6 +126,10 @@ export default function OrderSuccessView({
     yPosition += 8;
     doc.text('Envío:', 120, yPosition);
     doc.text(convertAndFormatPrice(shippingCost, selectedCountryCode), 150, yPosition);
+
+    yPosition += 8;
+    doc.text('ITBIS (18%):', 120, yPosition);
+    doc.text(convertAndFormatPrice(tax, selectedCountryCode), 150, yPosition);
     
     yPosition += 8;
     doc.setFontSize(12);
@@ -175,8 +196,9 @@ export default function OrderSuccessView({
     ? orderInfo.items.reduce((sum, item) => sum + item.product.price * item.quantity, 0)
     : 3550;
 
-  const shippingCost = hasDynamicItems ? 150 : 0;
-  const total = subtotal + shippingCost;
+  const shippingCost = orderInfo?.shippingCost ?? 0;
+  const tax = orderInfo?.tax ?? 0;
+  const total = orderInfo?.finalTotal ?? (subtotal + shippingCost + tax);
 
   // Real-time detailed WhatsApp message assembling
   const itemsText = items.map((item) => {
@@ -196,6 +218,7 @@ export default function OrderSuccessView({
     `• *Método:* ${paymentStr}\n\n` +
     `*PRODUCTOS ADQUIRIDOS:*\n${itemsText}\n\n` +
     `• *Envío:* ${convertAndFormatPrice(shippingCost, selectedCountryCode)}\n` +
+    `• *ITBIS (18%):* ${convertAndFormatPrice(tax, selectedCountryCode)}\n` +
     `• *Total:* ${convertAndFormatPrice(total, selectedCountryCode)}\n\n` +
     `Por favor, procedan con la entrega de mis elixires.`;
 
@@ -308,6 +331,10 @@ export default function OrderSuccessView({
                   <span>COSTO DE ENVIO:</span>
                   <span>{convertAndFormatPrice(shippingCost, selectedCountryCode)}</span>
                 </div>
+                <div className="flex justify-between">
+                  <span>ITBIS (18%):</span>
+                  <span>{convertAndFormatPrice(tax, selectedCountryCode)}</span>
+                </div>
                 <div className="flex justify-between font-bold text-stone-900 border-t border-double border-stone-500 pt-2 text-xs">
                   <span>TOTAL FACTURADO:</span>
                   <span>{convertAndFormatPrice(total, selectedCountryCode)}</span>
@@ -396,26 +423,28 @@ export default function OrderSuccessView({
                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-8 text-sm text-left">
                   <div>
                     <dt className="text-[10px] uppercase font-bold text-outline tracking-wider mb-1">Banco</dt>
-                    <dd className="text-on-surface font-sans font-medium">Banco Premium S.A.</dd>
+                    <dd className="text-on-surface font-sans font-medium">{displayBankAccount.bankType}</dd>
                   </div>
                   <div>
                     <dt className="text-[10px] uppercase font-bold text-outline tracking-wider mb-1">Beneficiario</dt>
-                    <dd className="text-on-surface font-sans font-medium">Aesthetica Rituals S.A. de C.V.</dd>
+                    <dd className="text-on-surface font-sans font-medium">{displayBankAccount.beneficiary}</dd>
                   </div>
                   <div className="sm:col-span-2">
                     <dt className="text-[10px] uppercase font-bold text-outline tracking-wider mb-1">CLABE Interbancaria</dt>
                     <dd className="font-serif text-xl sm:text-2xl text-primary tracking-wider mt-1 select-all font-light">
-                      {clabeNumber}
+                      {displayBankAccount.clabe || displayBankAccount.accountNumber || ''}
                     </dd>
                   </div>
                 </dl>
               </div>
 
               {/* Upload Zone */}
-              <div className="flex-grow flex flex-col justify-end">
-                <h3 className="text-[11px] uppercase font-semibold text-outline tracking-widest mb-4">
-                  Comprobante de Pago (Opcional)
-                </h3>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-[11px] uppercase font-semibold text-outline tracking-widest mb-4">
+                    Comprobante de Pago (Opcional)
+                  </h3>
+                </div>
                 
                 <div
                   onDragOver={handleDragOver}
@@ -486,7 +515,7 @@ export default function OrderSuccessView({
                 </div>
 
                 {/* CTA Action button - ALWAYS ENABLES DIRECT SENDING OF ORDERS */}
-                <div className="flex gap-3">
+                <div className="pt-6 border-t border-outline-variant/20 flex flex-col gap-3">
                   <button
                     type="button"
                     onClick={generatePDF}

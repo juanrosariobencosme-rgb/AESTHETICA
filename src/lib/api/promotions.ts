@@ -1,6 +1,67 @@
 import { supabase } from '../supabase';
 import { PromotionBundle } from '../../types';
 
+function shouldRetryWithLegacyColumns(error: any): boolean {
+  const message = String(error?.message || '').toLowerCase();
+  return (
+    error?.code === 'PGRST204' ||
+    error?.code === '42703' ||
+    error?.code === '406' ||
+    message.includes('schema cache') ||
+    message.includes('could not find') ||
+    message.includes('does not exist') ||
+    message.includes('not acceptable')
+  );
+}
+
+function fromDbPromotion(promo: any): PromotionBundle {
+  return {
+    id: promo.id,
+    title: promo.title,
+    subtitle: promo.subtitle,
+    description: promo.description,
+    productIds: promo.product_ids ?? promo.productids ?? [],
+    price: promo.price,
+    valuePrice: promo.value_price ?? promo.valueprice ?? undefined,
+    image: promo.image,
+    tag: promo.tag ?? undefined,
+    active: promo.active ?? undefined,
+    category: promo.category ?? undefined
+  } as PromotionBundle;
+}
+
+function toDbPromotion(promotion: PromotionBundle): any {
+  return {
+    id: promotion.id,
+    title: promotion.title,
+    subtitle: promotion.subtitle,
+    description: promotion.description,
+    product_ids: promotion.productIds,
+    price: promotion.price,
+    value_price: promotion.valuePrice ?? null,
+    image: promotion.image,
+    tag: promotion.tag ?? null,
+    active: promotion.active ?? true,
+    category: promotion.category ?? 'Promoción'
+  };
+}
+
+function toLegacyDbPromotion(promotion: PromotionBundle): any {
+  return {
+    id: promotion.id,
+    title: promotion.title,
+    subtitle: promotion.subtitle,
+    description: promotion.description,
+    productids: promotion.productIds,
+    price: promotion.price,
+    valueprice: promotion.valuePrice ?? null,
+    image: promotion.image,
+    tag: promotion.tag ?? null,
+    active: promotion.active ?? true,
+    category: promotion.category ?? 'Promoción'
+  };
+}
+
 export const promotionsApi = {
   async getAll(): Promise<PromotionBundle[]> {
     try {
@@ -14,20 +75,7 @@ export const promotionsApi = {
         throw error;
       }
 
-      // Transform columnas DB (minúsculas) -> camelCase (app)
-      return (data || []).map(promo => ({
-        id: promo.id,
-        title: promo.title,
-        subtitle: promo.subtitle,
-        description: promo.description,
-        productIds: promo.productids,
-        price: promo.price,
-        valuePrice: promo.valueprice ?? undefined,
-        image: promo.image,
-        tag: promo.tag ?? undefined,
-        active: promo.active ?? undefined,
-        category: promo.category ?? undefined
-      })) as PromotionBundle[];
+      return (data || []).map(fromDbPromotion);
     } catch (error) {
       console.error('Error in promotionsApi.getAll:', error);
       throw error;
@@ -49,19 +97,7 @@ export const promotionsApi = {
 
       if (!data) return null;
 
-      return {
-        id: data.id,
-        title: data.title,
-        subtitle: data.subtitle,
-        description: data.description,
-        productIds: data.productids,
-        price: data.price,
-        valuePrice: data.valueprice ?? undefined,
-        image: data.image,
-        tag: data.tag ?? undefined,
-        active: data.active ?? undefined,
-        category: data.category ?? undefined
-      } as PromotionBundle;
+      return fromDbPromotion(data);
     } catch (error) {
       console.error('Error in promotionsApi.getById:', error);
       throw error;
@@ -70,28 +106,23 @@ export const promotionsApi = {
 
   async create(promotion: PromotionBundle): Promise<PromotionBundle> {
     try {
-      // Transform camelCase (app) -> columnas DB (minúsculas)
-      const dbPromotion = {
-        id: promotion.id,
-        title: promotion.title,
-        subtitle: promotion.subtitle,
-        description: promotion.description,
-        productids: promotion.productIds,
-        price: promotion.price,
-        valueprice: promotion.valuePrice ?? null,
-        image: promotion.image,
-        tag: promotion.tag ?? null,
-        active: promotion.active ?? true,
-        category: promotion.category ?? 'Promoción'
-      };
-
+      let dbPromotion = toDbPromotion(promotion);
       console.log('Creating promotion:', dbPromotion);
 
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('promotions')
         .insert(dbPromotion)
         .select()
         .single();
+
+      if (error && shouldRetryWithLegacyColumns(error) && String(error.message || '').match(/product_ids|productids|value_price|valueprice/)) {
+        dbPromotion = toLegacyDbPromotion(promotion);
+        ({ data, error } = await supabase
+          .from('promotions')
+          .insert(dbPromotion)
+          .select()
+          .single());
+      }
 
       if (error) {
         console.error('Error creating promotion:', error);
@@ -99,20 +130,7 @@ export const promotionsApi = {
       }
 
       console.log('Promotion created successfully');
-
-      return {
-        id: data.id,
-        title: data.title,
-        subtitle: data.subtitle,
-        description: data.description,
-        productIds: data.productids,
-        price: data.price,
-        valuePrice: data.valueprice ?? undefined,
-        image: data.image,
-        tag: data.tag ?? undefined,
-        active: data.active ?? undefined,
-        category: data.category ?? undefined
-      } as PromotionBundle;
+      return fromDbPromotion(data);
     } catch (error) {
       console.error('Error in promotionsApi.create:', error);
       throw error;
@@ -122,17 +140,16 @@ export const promotionsApi = {
   async delete(id: string): Promise<void> {
     try {
       console.log('Deleting promotion:', id);
-      
       const { error } = await supabase
         .from('promotions')
         .delete()
         .eq('id', id);
-      
+
       if (error) {
         console.error('Error deleting promotion:', error);
         throw error;
       }
-      
+
       console.log('Promotion deleted successfully');
     } catch (error) {
       console.error('Error in promotionsApi.delete:', error);
@@ -143,26 +160,20 @@ export const promotionsApi = {
   async upsert(promotions: PromotionBundle[]): Promise<PromotionBundle[]> {
     try {
       console.log('Upserting promotions:', promotions.length);
+      let dbPromotions = promotions.map(toDbPromotion);
 
-      // Transform camelCase (app) -> columnas DB (minúsculas)
-      const dbPromotions = promotions.map(promo => ({
-        id: promo.id,
-        title: promo.title,
-        subtitle: promo.subtitle,
-        description: promo.description,
-        productids: promo.productIds,
-        price: promo.price,
-        valueprice: promo.valuePrice ?? null,
-        image: promo.image,
-        tag: promo.tag ?? null,
-        active: promo.active ?? true,
-        category: promo.category ?? 'Promoción'
-      }));
-
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('promotions')
         .upsert(dbPromotions, { onConflict: 'id' })
         .select();
+
+      if (error && shouldRetryWithLegacyColumns(error) && String(error.message || '').match(/product_ids|productids|value_price|valueprice/)) {
+        dbPromotions = promotions.map(toLegacyDbPromotion);
+        ({ data, error } = await supabase
+          .from('promotions')
+          .upsert(dbPromotions, { onConflict: 'id' })
+          .select());
+      }
 
       if (error) {
         console.error('Error upserting promotions:', error);
@@ -170,21 +181,7 @@ export const promotionsApi = {
       }
 
       console.log('Promotions upserted successfully');
-
-      // Transform columnas DB (minúsculas) -> camelCase (app)
-      return (data || []).map(promo => ({
-        id: promo.id,
-        title: promo.title,
-        subtitle: promo.subtitle,
-        description: promo.description,
-        productIds: promo.productids,
-        price: promo.price,
-        valuePrice: promo.valueprice ?? undefined,
-        image: promo.image,
-        tag: promo.tag ?? undefined,
-        active: promo.active ?? undefined,
-        category: promo.category ?? undefined
-      })) as PromotionBundle[];
+      return (data || []).map(fromDbPromotion);
     } catch (error) {
       console.error('Error in promotionsApi.upsert:', error);
       throw error;

@@ -144,6 +144,8 @@ export default function AdminPanel({
   const [bankClabeNumber, setBankClabeNumber] = useState(bankAccount.clabe ?? '');
   const [bankActiveStatus, setBankActiveStatus] = useState(bankAccount.active ?? true);
 
+  const [socialsForm, setSocialsForm] = useState<SocialConfig>(socials);
+
   useEffect(() => {
     setShippingDistrictRate(shippingSettings.districtRate);
     setShippingOutsideRate(shippingSettings.outsideRate);
@@ -157,6 +159,10 @@ export default function AdminPanel({
     setBankClabeNumber(bankAccount.clabe ?? '');
     setBankActiveStatus(bankAccount.active ?? true);
   }, [bankAccount]);
+
+  useEffect(() => {
+    setSocialsForm(socials);
+  }, [socials]);
 
   // New Expense state
   const [expenseTitle, setExpenseTitle] = useState('');
@@ -233,6 +239,129 @@ export default function AdminPanel({
   const [customRangeStart, setCustomRangeStart] = useState('');
   const [customRangeEnd, setCustomRangeEnd] = useState('');
   const [customRangeRevenue, setCustomRangeRevenue] = useState<number | null>(null);
+  const [customRangeExpenses, setCustomRangeExpenses] = useState<number | null>(null);
+  const [customRangeProfit, setCustomRangeProfit] = useState<number | null>(null);
+  const [selectedReportPeriod, setSelectedReportPeriod] = useState<'day' | 'week' | 'month' | 'year' | 'custom'>('day');
+
+  const reportSeries = useMemo(() => {
+    const now = new Date();
+    const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+    const getDayKey = (date: Date) => `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+    const getWeekStart = (date: Date) => {
+      const weekStart = new Date(date);
+      const day = weekStart.getDay();
+      const distanceToMonday = day === 0 ? 6 : day - 1;
+      weekStart.setDate(weekStart.getDate() - distanceToMonday);
+      weekStart.setHours(0, 0, 0, 0);
+      return weekStart;
+    };
+    const getWeekKey = (date: Date) => `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+    const getMonthKey = (date: Date) => `${date.getFullYear()}-${date.getMonth()}`;
+
+    const revenueByDay: Record<string, number> = {};
+    const revenueByWeek: Record<string, number> = {};
+    const revenueByMonth: Record<string, number> = {};
+
+    orders.forEach(order => {
+      const orderDate = new Date(order.date);
+      const dayKey = getDayKey(orderDate);
+      const weekKey = getWeekKey(getWeekStart(orderDate));
+      const monthKey = getMonthKey(orderDate);
+
+      revenueByDay[dayKey] = (revenueByDay[dayKey] || 0) + order.total;
+      revenueByWeek[weekKey] = (revenueByWeek[weekKey] || 0) + order.total;
+      revenueByMonth[monthKey] = (revenueByMonth[monthKey] || 0) + order.total;
+    });
+
+    const series: { labels: string[]; values: number[]; title: string } = {
+      labels: [],
+      values: [],
+      title: 'Últimos 7 días'
+    };
+
+    if (selectedReportPeriod === 'day') {
+      for (let offset = 6; offset >= 0; offset -= 1) {
+        const date = new Date(now);
+        date.setDate(date.getDate() - offset);
+        const key = getDayKey(date);
+        series.labels.push(`${dayNames[date.getDay()]}`);
+        series.values.push(revenueByDay[key] || 0);
+      }
+      series.title = 'Evolución diaria (última semana)';
+    } else if (selectedReportPeriod === 'week') {
+      const currentWeekStart = getWeekStart(now);
+      for (let index = 5; index >= 0; index -= 1) {
+        const weekStart = new Date(currentWeekStart);
+        weekStart.setDate(weekStart.getDate() - index * 7);
+        const key = getWeekKey(weekStart);
+        series.labels.push(`S ${weekStart.getMonth() + 1}/${weekStart.getDate()}`);
+        series.values.push(revenueByWeek[key] || 0);
+      }
+      series.title = 'Evolución semanal (últimas 6 semanas)';
+    } else if (selectedReportPeriod === 'month') {
+      for (let index = 5; index >= 0; index -= 1) {
+        const date = new Date(now.getFullYear(), now.getMonth() - index, 1);
+        const key = getMonthKey(date);
+        series.labels.push(monthNames[date.getMonth()]);
+        series.values.push(revenueByMonth[key] || 0);
+      }
+      series.title = 'Evolución mensual (últimos 6 meses)';
+    } else if (selectedReportPeriod === 'year') {
+      for (let index = 11; index >= 0; index -= 1) {
+        const date = new Date(now.getFullYear(), now.getMonth() - index, 1);
+        const key = getMonthKey(date);
+        series.labels.push(monthNames[date.getMonth()]);
+        series.values.push(revenueByMonth[key] || 0);
+      }
+      series.title = 'Evolución anual (últimos 12 meses)';
+    } else {
+      const start = customRangeStart ? new Date(customRangeStart) : new Date(now.getTime() - 1000 * 60 * 60 * 24 * 6);
+      const end = customRangeEnd ? new Date(customRangeEnd) : now;
+      end.setHours(23, 59, 59, 999);
+
+      const numberOfDays = Math.min(Math.max(Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1, 1), 31);
+      const rangeStart = new Date(start);
+
+      for (let index = 0; index < numberOfDays; index += 1) {
+        const date = new Date(rangeStart);
+        date.setDate(rangeStart.getDate() + index);
+        const key = getDayKey(date);
+        series.labels.push(`${date.getDate()}/${date.getMonth() + 1}`);
+        series.values.push(revenueByDay[key] || 0);
+      }
+      series.title = 'Evolución personalizada';
+    }
+
+    return series;
+  }, [orders, selectedReportPeriod, customRangeStart, customRangeEnd]);
+
+  const reportTotal = reportSeries.values.reduce((acc, value) => acc + value, 0);
+  const reportTrend = useMemo(() => {
+    const values = reportSeries.values;
+    if (values.length < 2) return 'Tendencia estable';
+    const first = values[0] || 0;
+    const last = values[values.length - 1] || 0;
+    if (first === 0) return last === 0 ? 'Sin cambio' : '+100%';
+    const diffPct = Math.round(((last - first) / Math.max(first, 1)) * 100);
+    return `${diffPct >= 0 ? '+' : ''}${diffPct}% ${diffPct >= 0 ? 'crecimiento' : 'descenso'}`;
+  }, [reportSeries]);
+
+  const chartData = useMemo(() => {
+    const width = 260;
+    const height = 80;
+    const padding = 20;
+    const values = reportSeries.values;
+    const maxValue = Math.max(...values, 1);
+    return values.map((value, index) => {
+      const x = padding + (width * index) / Math.max(values.length - 1, 1);
+      const y = padding + height - (value / maxValue) * height;
+      return { x, y, value };
+    });
+  }, [reportSeries]);
+
+  // pieData moved below after dynamicFinance initialization to avoid temporal dead zone
 
   // Trigger feedback banner helper
   const showFeedback = (msg: string, isError = false) => {
@@ -288,6 +417,26 @@ export default function AdminPanel({
     };
   }, [orders, expenses]);
 
+  // pie chart data depends on dynamicFinance; compute after it's initialized
+  const pieData = useMemo(() => {
+    const revenue = dynamicFinance.totalRevenue;
+    const expenses = Math.abs(dynamicFinance.totalExpenses);
+    const profit = Math.max(dynamicFinance.netProfit, 0);
+    const total = Math.max(revenue + expenses + profit, 1);
+    const revenuePct = Math.round((revenue / total) * 100);
+    const expensePct = Math.round((expenses / total) * 100);
+    const profitPct = Math.max(0, 100 - revenuePct - expensePct);
+    return {
+      revenue,
+      expenses,
+      profit,
+      revenuePct,
+      expensePct,
+      profitPct,
+      gradient: `conic-gradient(#2A2621 0% ${revenuePct}%, #C5A880 ${revenuePct}% ${revenuePct + expensePct}%, #D9A675 ${revenuePct + expensePct}% 100%)`
+    };
+  }, [dynamicFinance]);
+
   // Handle Custom Finance calculation
   const handleCalculateCustomRange = () => {
     if (!customRangeStart || !customRangeEnd) {
@@ -299,14 +448,27 @@ export default function AdminPanel({
     end.setHours(23, 59, 59, 999); // include full end day
 
     let sum = 0;
+    let expenseSum = 0;
+
     orders.forEach(order => {
       const orderDate = new Date(order.date);
       if (orderDate >= start && orderDate <= end) {
         sum += order.total;
       }
     });
+
+    expenses.forEach(exp => {
+      const expDate = new Date(exp.date);
+      if (expDate >= start && expDate <= end) {
+        expenseSum += exp.amount;
+      }
+    });
+
+    setSelectedReportPeriod('custom');
     setCustomRangeRevenue(sum);
-    showFeedback(`Reporte calculado para el periodo especificado`);
+    setCustomRangeExpenses(expenseSum);
+    setCustomRangeProfit(sum - expenseSum);
+    showFeedback('Reporte calculado para el periodo especificado');
   };
 
   // --- Product Management Actions ---
@@ -317,8 +479,9 @@ export default function AdminPanel({
       return;
     }
 
+    const slug = newProdName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
     const newProd: Product = {
-      id: newProdName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+      id: `${slug}-${Date.now()}`,
       name: newProdName,
       subtitle: newProdSubtitle,
       description: newProdDesc,
@@ -700,48 +863,55 @@ export default function AdminPanel({
 
   // Dynamic lists with search selectors
   const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(productSearch.toLowerCase()) || 
-    p.subtitle.toLowerCase().includes(productSearch.toLowerCase()) || 
-    p.concern.toLowerCase().includes(productSearch.toLowerCase())
+    (p.name ?? '').toLowerCase().includes(productSearch.toLowerCase()) || 
+    (p.subtitle ?? '').toLowerCase().includes(productSearch.toLowerCase()) || 
+    (p.concern ?? '').toLowerCase().includes(productSearch.toLowerCase())
   );
 
   const filteredOrders = orders.filter(o => 
-    o.id.toLowerCase().includes(orderSearch.toLowerCase()) || 
-    o.customerName.toLowerCase().includes(orderSearch.toLowerCase()) || 
-    o.customerEmail.toLowerCase().includes(orderSearch.toLowerCase())
+    (o.id ?? '').toLowerCase().includes(orderSearch.toLowerCase()) || 
+    (o.customerName ?? '').toLowerCase().includes(orderSearch.toLowerCase()) || 
+    (o.customerEmail ?? '').toLowerCase().includes(orderSearch.toLowerCase())
   );
 
   const filteredExpenses = expenses.filter(e => 
-    e.title.toLowerCase().includes(expenseSearch.toLowerCase()) || 
-    e.category.toLowerCase().includes(expenseSearch.toLowerCase())
+    (e.title ?? '').toLowerCase().includes(expenseSearch.toLowerCase()) || 
+    (e.category ?? '').toLowerCase().includes(expenseSearch.toLowerCase())
   );
 
   // Client database built from both direct orders and spa appointments (simulated CRM board)
   const clientsCRM = useMemo(() => {
     const registry: { [email: string]: { name: string; email: string; ordersCount: number; spent: number; lastDate: string } } = {};
-    
+
     orders.forEach(o => {
-      const email = o.customerEmail.toLowerCase();
-      if (!registry[email]) {
-        registry[email] = {
-          name: o.customerName,
-          email: o.customerEmail,
+      const emailKey = (o.customerEmail ?? '').toLowerCase();
+      const nameVal = o.customerName ?? '';
+      const emailVal = o.customerEmail ?? '';
+
+      // Use a fallback key when email is missing to avoid collisions
+      const key = emailKey || `unknown-${o.id ?? Date.now()}`;
+
+      if (!registry[key]) {
+        registry[key] = {
+          name: nameVal,
+          email: emailVal,
           ordersCount: 0,
           spent: 0,
           lastDate: o.date
         };
       }
-      registry[email].ordersCount += 1;
-      registry[email].spent += o.total;
-      if (new Date(o.date) > new Date(registry[email].lastDate)) {
-        registry[email].lastDate = o.date;
+      registry[key].ordersCount += 1;
+      registry[key].spent += o.total;
+      if (new Date(o.date) > new Date(registry[key].lastDate)) {
+        registry[key].lastDate = o.date;
       }
     });
 
-    // Match users from search field
+    // Match users from search field (safely lowercasing)
+    const normalizedSearch = (clientSearch ?? '').toLowerCase();
     return Object.values(registry).filter(c => 
-      c.name.toLowerCase().includes(clientSearch.toLowerCase()) ||
-      c.email.toLowerCase().includes(clientSearch.toLowerCase())
+      (c.name ?? '').toLowerCase().includes(normalizedSearch) ||
+      (c.email ?? '').toLowerCase().includes(normalizedSearch)
     );
   }, [orders, clientSearch]);
 
@@ -805,12 +975,10 @@ export default function AdminPanel({
               { id: 'dashboard', label: 'Dashboard & Finanzas', icon: TrendingUp },
               { id: 'inventory', label: 'Control Inventario', icon: ShoppingBag },
               { id: 'orders', label: 'Facturas y Órdenes', icon: FileText },
-              { id: 'expenses', label: 'Egresos y Gastos', icon: DollarSign },
               { id: 'clients', label: 'Cartelera de Clientes', icon: Users },
               { id: 'promotions', label: 'Campañas Promociones', icon: Tag },
               { id: 'combos', label: 'Combos', icon: Layers },
               { id: 'carousel', label: 'Banners / Carousel', icon: Truck },
-              { id: 'shipping', label: 'Ajustes Envíos', icon: MapPin },
               { id: 'bank', label: 'Datos Bancarios', icon: Banknote },
               { id: 'cashier', label: 'Caja y Cierre Diario', icon: Calculator },
               { id: 'socials', label: 'Ajustes Redes Sociales', icon: Settings },
@@ -895,6 +1063,28 @@ export default function AdminPanel({
                     <Calendar className="w-4.5 h-4.5 text-[#C5A880]" />
                     Generación de Reporte Personalizado
                   </h3>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                    {[
+                      { key: 'day', label: 'Día' },
+                      { key: 'week', label: 'Semana' },
+                      { key: 'month', label: 'Mes' },
+                      { key: 'year', label: 'Año' },
+                      { key: 'custom', label: 'Personalizado' }
+                    ].map(option => (
+                      <button
+                        key={option.key}
+                        type="button"
+                        onClick={() => setSelectedReportPeriod(option.key as any)}
+                        className={`text-[10px] uppercase tracking-[0.2em] py-2 px-2 border rounded-none font-semibold transition-colors ${selectedReportPeriod === option.key ? 'bg-[#2A2621] text-white border-[#2A2621]' : 'bg-white text-[#2A2621] border-[#EADCC9]'}`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <p className="text-[10px] text-[#7D7569] font-sans">{selectedReportPeriod === 'custom' ? 'Elige tus fechas y pulsa Calcular para generar el reporte.' : reportSeries.title}</p>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="text-[10px] uppercase font-bold text-[#7D7569] block mb-1">Fecha Inicio</label>
@@ -915,70 +1105,111 @@ export default function AdminPanel({
                       />
                     </div>
                   </div>
-                  <div className="flex justify-between items-center pt-2 border-t border-[#EADCC9]/30">
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 border-t border-[#EADCC9]/30">
+                    <div className="bg-white border border-[#EADCC9]/50 p-3 text-center rounded-none">
+                      <span className="text-[9px] uppercase tracking-wider text-[#7D7569] block">Total periodo</span>
+                      <span className="block font-serif text-sm font-bold text-[#2A2621] mt-1">{convertAndFormatPrice(reportTotal, selectedCountryCode)}</span>
+                    </div>
+                    <div className="bg-white border border-[#EADCC9]/50 p-3 text-center rounded-none">
+                      <span className="text-[9px] uppercase tracking-wider text-[#7D7569] block">Tendencia</span>
+                      <span className="block font-serif text-sm font-bold text-[#2A2621] mt-1">{reportTrend}</span>
+                    </div>
                     <button
                       onClick={handleCalculateCustomRange}
-                      className="px-4 py-2 bg-[#2A2621] hover:bg-[#C5A880] text-white text-[10px] uppercase tracking-widest font-bold transition-all"
+                      className="w-full py-3 bg-[#2A2621] hover:bg-[#C5A880] text-white text-[10px] uppercase tracking-widest font-bold transition-all"
                     >
                       Calcular Ingreso de Rango
                     </button>
-                    {customRangeRevenue !== null && (
-                      <div className="text-right">
-                        <span className="text-[9px] text-[#7D7569] block uppercase">Ventas totales procesadas en rango:</span>
-                        <span className="text-sm font-serif font-bold text-emerald-800">{convertAndFormatPrice(customRangeRevenue, selectedCountryCode)}</span>
-                      </div>
-                    )}
                   </div>
+
+                  {selectedReportPeriod === 'custom' && customRangeRevenue !== null && (
+                    <div className="grid grid-cols-1 gap-2 text-sm text-[#2A2621]">
+                      <span className="text-[9px] uppercase tracking-wider text-[#7D7569]">Ventas totales procesadas en rango</span>
+                      <span className="font-serif font-bold text-emerald-800">{convertAndFormatPrice(customRangeRevenue, selectedCountryCode)}</span>
+                      <span className="text-[10px] text-[#7D7569]">Gastos: {convertAndFormatPrice(Math.abs(customRangeExpenses ?? 0), selectedCountryCode)}</span>
+                      <span className="text-[10px] text-[#7D7569]">Utilidad: {convertAndFormatPrice(customRangeProfit ?? 0, selectedCountryCode)}</span>
+                    </div>
+                  )}
                 </div>
 
-                {/* Gorgeous Visual Line / Bar Analytics Chart built on responsive SVG */}
-                <div className="bg-[#FAF8F5] border border-[#EADCC9]/50 p-6 space-y-4">
-                  <div className="flex justify-between items-end">
-                    <div>
-                      <h4 className="text-xs uppercase font-bold tracking-widest text-[#2A2621]">Gráfica de Ingresos Consolidados</h4>
-                      <p className="text-[10px] text-[#7D7569] mt-0.5 font-sans">Simulación de tendencias diarias en los últimos periodos</p>
+                <div className="grid gap-4 lg:grid-cols-[1.7fr_1fr]">
+                  <div className="bg-[#FAF8F5] border border-[#EADCC9]/50 p-6 space-y-4">
+                    <div className="flex justify-between items-end">
+                      <div>
+                        <h4 className="text-xs uppercase font-bold tracking-widest text-[#2A2621]">Tendencia Lineal de Ventas</h4>
+                        <p className="text-[10px] text-[#7D7569] mt-0.5 font-sans">{reportSeries.title}. Muestra la evolución real según el periodo seleccionado.</p>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-4 text-[10px] font-mono">
-                      <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-indigo-700 block"></span><span>Ventas</span></div>
-                      <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-[#C5A880] block"></span><span>Proyección</span></div>
+                    <div className="h-52 w-full bg-white border border-[#EADCC9]/40 p-4 rounded-none relative overflow-hidden">
+                      <svg viewBox="0 0 300 120" className="w-full h-full">
+                        <defs>
+                          <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="0%" stopColor="#2a2621" />
+                            <stop offset="100%" stopColor="#C5A880" />
+                          </linearGradient>
+                        </defs>
+                        {[0,25,50,75,100].map((tick) => (
+                          <line key={tick} x1="20" y1={20 + ((80 * tick) / 100)} x2="280" y2={20 + ((80 * tick) / 100)} stroke="#EADCC9" strokeWidth="1" />
+                        ))}
+                        <polyline
+                          fill="none"
+                          stroke="url(#lineGrad)"
+                          strokeWidth="4"
+                          points={chartData.map(point => `${point.x},${point.y}`).join(' ')}
+                        />
+                        {chartData.map((point, idx) => (
+                          <g key={idx}>
+                            <circle cx={point.x} cy={point.y} r="4" fill="#2A2621" />
+                            <text x={point.x} y={point.y - 10} textAnchor="middle" fontSize="8" fill="#2A2621">
+                              {convertAndFormatPrice(point.value, selectedCountryCode)}
+                            </text>
+                          </g>
+                        ))}
+                        {chartData.map((point, idx) => (
+                          <text key={`label-${idx}`} x={point.x} y="115" textAnchor="middle" fontSize="8" fill="#7D7569">
+                            {reportSeries.labels[idx]}
+                          </text>
+                        ))}
+                      </svg>
                     </div>
                   </div>
 
-                  {/* SVG Bar / Chart representing data points */}
-                  <div className="h-44 w-full bg-white border border-[#EADCC9]/40 relative flex items-end p-2 px-6 pt-6">
-                    <div className="absolute inset-x-6 top-12 border-b border-stone-100"></div>
-                    <div className="absolute inset-x-6 top-24 border-b border-stone-100 font-mono text-[8px] text-stone-300 text-right pr-2">Cresta Media</div>
-                    <div className="absolute inset-x-6 top-32 border-b border-stone-100"></div>
-                    
-                    {/* Columns representing calendar ranges */}
-                    <div className="flex-1 flex justify-around items-end h-full z-10">
-                      {[
-                        { day: 'Lun', amt: 45, proj: 30 },
-                        { day: 'Mar', amt: 85, proj: 40 },
-                        { day: 'Mie', amt: 60, proj: 55 },
-                        { day: 'Jue', amt: 120, proj: 90 },
-                        { day: 'Vie', amt: 145, proj: 120 },
-                        { day: 'Sab', amt: 210, proj: 160 },
-                        { day: 'Dom', amt: (dynamicFinance.dailyRevenue / 10) || 50, proj: 90 }
-                      ].map((bar, i) => (
-                        <div key={i} className="flex flex-col items-center gap-1 w-full max-w-[40px]">
-                          <div className="w-full flex items-end gap-1 h-32 justify-center">
-                            <div 
-                              style={{ height: `${Math.min(100, bar.amt / 2)}%` }}
-                              className="w-3 bg-indigo-900/90 transition-all duration-700 hover:opacity-85" 
-                              title={`Ventas: $${bar.amt * 10}`} 
-                            />
-                            <div 
-                              style={{ height: `${Math.min(100, bar.proj / 2)}%` }}
-                              className="w-1.5 bg-[#C5A880]/70 transition-all duration-700" 
-                            />
-                          </div>
-                          <span className="font-mono text-[9px] text-[#7D7569]">{bar.day}</span>
+                  <div className="bg-[#FAF8F5] border border-[#EADCC9]/50 p-6 space-y-4">
+                    <div className="flex justify-between items-end">
+                      <div>
+                        <h4 className="text-xs uppercase font-bold tracking-widest text-[#2A2621]">Composición de Ingresos</h4>
+                        <p className="text-[10px] text-[#7D7569] mt-0.5 font-sans">Distribución de ingresos, gastos y utilidad.</p>
+                      </div>
+                    </div>
+                    <div className="relative flex items-center justify-center h-52">
+                      <div
+                        className="w-44 h-44 rounded-full"
+                        style={{
+                          background: pieData.gradient
+                        }}
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-20 h-20 rounded-full bg-[#FAF8F5] flex items-center justify-center text-center text-[11px] font-semibold text-[#2A2621] px-2">
+                          {pieData.revenuePct}% Ingresos
                         </div>
-                      ))}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 gap-2 text-[10px]">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#2A2621] block"></span>
+                        <span>Ingresos: {convertAndFormatPrice(dynamicFinance.totalRevenue, selectedCountryCode)}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#C5A880] block"></span>
+                        <span>Gastos: {convertAndFormatPrice(Math.abs(dynamicFinance.totalExpenses), selectedCountryCode)}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#D9A675] block"></span>
+                        <span>Utilidad: {convertAndFormatPrice(Math.max(dynamicFinance.netProfit, 0), selectedCountryCode)}</span>
+                      </div>
                     </div>
                   </div>
-
                 </div>
 
               </div>
@@ -1044,7 +1275,15 @@ export default function AdminPanel({
                               className="w-32 h-32 object-cover border border-[#EADCC9]/50"
                               referrerPolicy="no-referrer"
                               onError={(e) => {
-                                e.currentTarget.src = 'https://via.placeholder.com/128?text=Error';
+                                // Evita depender de via.placeholder.com (a veces falla/bloquea).
+                                const svg = encodeURIComponent(
+                                  `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128">
+                                    <rect width="100%" height="100%" fill="#f1f5f9"/>
+                                    <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
+                                      font-family="Arial" font-size="12" fill="#334155">IMG ERROR</text>
+                                  </svg>`
+                                );
+                                e.currentTarget.src = `data:image/svg+xml;charset=utf-8,${svg}`;
                               }}
                             />
                             <p className="text-[10px] text-stone-500 mt-1">Vista previa de la imagen</p>
@@ -1270,10 +1509,6 @@ export default function AdminPanel({
                               <span className="text-stone-400">Impuesto IVA (16%):</span>
                               <span className="font-mono text-stone-800">{convertAndFormatPrice(selectedInvoice.tax, selectedCountryCode)}</span>
                             </div>
-                            <div className="flex justify-between">
-                              <span className="text-stone-400">Seguro Courier DHL Express:</span>
-                              <span className="font-mono text-stone-800">{convertAndFormatPrice(selectedInvoice.shipping, selectedCountryCode)}</span>
-                            </div>
                             <div className="flex justify-between border-t border-stone-200 pt-2 text-sm font-bold">
                               <span>Total Neto Liquidado:</span>
                               <span className="font-serif text-stone-900 border-b border-double border-stone-400">{convertAndFormatPrice(selectedInvoice.total, selectedCountryCode)}</span>
@@ -1348,114 +1583,6 @@ export default function AdminPanel({
                             </td>
                           </tr>
                         ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-              </div>
-            )}
-
-            {/* ====== SUB TIER 4: REGISTRAR GASTOS ====== */}
-            {activeSubTab === 'expenses' && (
-              <div className="space-y-6 text-left">
-                <div className="flex justify-between items-center border-b border-[#EADCC9]/30 pb-4">
-                  <div>
-                    <h2 className="font-serif text-xl text-[#2A2621] tracking-tight">Egresos & Costos Corrientes</h2>
-                    <p className="text-[10px] text-[#7D7569] mt-0.5">Registre la compra de insumos dermatológicos, costos logísticos o marketing.</p>
-                  </div>
-                </div>
-
-                {/* Gastos registration form */}
-                <form onSubmit={handleAddExpense} className="p-4 border bg-stone-50 flex flex-col sm:flex-row gap-3 items-end">
-                  <div className="flex-1 space-y-1">
-                    <label className="text-[10px] font-bold text-stone-600 block">Título / Concepto</label>
-                    <input 
-                      type="text" 
-                      placeholder="Moléculas Saffron Extract" 
-                      value={expenseTitle} 
-                      onChange={e => setExpenseTitle(e.target.value)}
-                      className="w-full text-xs p-2.5 bg-white border"
-                      required
-                    />
-                  </div>
-                  <div className="w-32 space-y-1">
-                    <label className="text-[10px] font-bold text-stone-600 block">Monto (USD)</label>
-                    <input 
-                      type="number" 
-                      placeholder="350" 
-                      value={expenseAmount || ''} 
-                      onChange={e => setExpenseAmount(Number(e.target.value))}
-                      className="w-full text-xs p-2.5 bg-white border"
-                      required
-                    />
-                  </div>
-                  <div className="w-40 space-y-1">
-                    <label className="text-[10px] font-bold text-stone-600 block">Categoría</label>
-                    <select 
-                      value={expenseCategory} 
-                      onChange={e => setExpenseCategory(e.target.value as any)}
-                      className="w-full text-xs p-2.5 bg-white border"
-                    >
-                      <option value="IMPERIAL_RAW">Materia Prima Imperial</option>
-                      <option value="LOGISTICA">Logística / Envíos</option>
-                      <option value="CUPONES">Reembolsos / Cupones</option>
-                      <option value="PERSONAL">Nómina / Personal</option>
-                      <option value="MARKETING">Pautas / Publicidad</option>
-                      <option value="OTROS">Otros Gastos</option>
-                    </select>
-                  </div>
-                  <button 
-                    type="submit" 
-                    className="px-5 py-3 bg-[#2A2621] hover:bg-[#C5A880] text-white text-[10px] uppercase font-bold tracking-widest transition-colors h-10.5"
-                  >
-                    Registrar Egreso
-                  </button>
-                </form>
-
-                {/* Ledger output */}
-                <div className="space-y-4">
-                  <div className="relative">
-                    <Search className="w-4 h-4 text-stone-400 absolute left-3 top-3" />
-                    <input
-                      type="text"
-                      placeholder="Buscar egresos..."
-                      value={expenseSearch}
-                      onChange={e => setExpenseSearch(e.target.value)}
-                      className="w-full bg-stone-50 border border-[#EADCC9]/55 pl-9 pr-4 py-2.5 text-xs focus:outline-none placeholder:text-stone-400"
-                    />
-                  </div>
-
-                  <div className="overflow-x-auto border border-[#EADCC9]/40">
-                    <table className="w-full text-left text-xs">
-                      <thead>
-                        <tr className="bg-[#FAF8F5] border-b border-[#EADCC9]/40 text-[#7D7569] uppercase tracking-[0.1em] font-bold text-[9px]">
-                          <th className="py-3 px-4">Concepto</th>
-                          <th className="py-3 px-4">Fecha</th>
-                          <th className="py-3 px-4">Categoría</th>
-                          <th className="py-3 px-4 text-right">Importe</th>
-                          <th className="py-3 px-4 text-center">Quitar</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredExpenses.map(e => (
-                          <tr key={e.id} className="border-b border-stone-100 hover:bg-stone-50">
-                            <td className="py-3 px-4 font-bold text-stone-800">{e.title}</td>
-                            <td className="py-3 px-4 text-stone-500 font-mono">{e.date}</td>
-                            <td className="py-3 px-4">
-                              <span className="inline-block px-1.5 py-0.5 font-mono text-[9px] uppercase bg-rose-50 text-rose-800 rounded">
-                                {e.category}
-                              </span>
-                            </td>
-                            <td className="py-3 px-4 text-right font-mono font-bold text-rose-700">-{convertAndFormatPrice(e.amount, selectedCountryCode)}</td>
-                            <td className="py-3 px-4 text-center">
-                              <button onClick={() => handleDeleteExpense(e.id)} className="text-stone-400 hover:text-rose-600"><Trash2 className="w-4 h-4" /></button>
-                            </td>
-                          </tr>
-                        ))}
-                        {filteredExpenses.length === 0 && (
-                          <tr><td colSpan={5} className="py-6 text-center text-[#7D7569]">No hay egresos que coincidan con la búsqueda.</td></tr>
-                        )}
                       </tbody>
                     </table>
                   </div>
@@ -1591,7 +1718,14 @@ export default function AdminPanel({
                               className="w-32 h-32 object-cover border border-[#EADCC9]/50"
                               referrerPolicy="no-referrer"
                               onError={(e) => {
-                                e.currentTarget.src = 'https://via.placeholder.com/128?text=Error';
+                                const svg = encodeURIComponent(
+                                  `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128">
+                                    <rect width="100%" height="100%" fill="#f1f5f9"/>
+                                    <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
+                                      font-family="Arial" font-size="12" fill="#334155">IMG ERROR</text>
+                                  </svg>`
+                                );
+                                e.currentTarget.src = `data:image/svg+xml;charset=utf-8,${svg}`;
                               }}
                             />
                             <p className="text-[10px] text-stone-500 mt-1">Vista previa de la imagen</p>
@@ -1734,7 +1868,10 @@ export default function AdminPanel({
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {combos.map(combo => (
+                  {(!combos || combos.length === 0) && (
+                    <div className="col-span-1 md:col-span-2 p-6 text-center text-stone-600">No hay combos disponibles.</div>
+                  )}
+                  {combos && combos.length > 0 && combos.map(combo => (
                     <div key={combo.id} className="border border-[#EADCC9]/50 p-4 rounded bg-[#FAF8F5]/80">
                       <div className="flex justify-between items-start gap-4 mb-3">
                         <div>
@@ -1750,7 +1887,7 @@ export default function AdminPanel({
                       </div>
                       <img src={combo.image} alt={combo.title} className="w-full h-40 object-cover rounded border border-[#EADCC9]/30 mb-3" referrerPolicy="no-referrer" />
                       <div className="text-[11px] text-stone-700">
-                        Productos: {combo.productIds.length}
+                        Productos: {Array.isArray(combo.productIds) ? combo.productIds.length : 0}
                       </div>
                     </div>
                   ))}
@@ -1846,33 +1983,6 @@ export default function AdminPanel({
                     </div>
                   );
                 })()}
-              </div>
-            )}
-
-            {/* ====== SUB TIER 9: AJUSTES DE ENVÍO ====== */}
-            {activeSubTab === 'shipping' && (
-              <div className="space-y-6 text-left">
-                <div className="flex justify-between items-center border-b border-[#EADCC9]/30 pb-4">
-                  <div>
-                    <h2 className="font-serif text-xl text-[#2A2621] tracking-tight">Ajustes de Envío</h2>
-                    <p className="text-[10px] text-[#7D7569] mt-0.5">Configura tarifas para Distrito y fuera de Distrito, y palabras clave de detección.</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-[10px] uppercase tracking-widest text-stone-700 font-bold block mb-2">Tarifa Distrito</label>
-                    <input type="number" value={shippingDistrictRate} onChange={e => setShippingDistrictRate(Number(e.target.value))} className="w-full p-3 border" />
-                  </div>
-                  <div>
-                    <label className="text-[10px] uppercase tracking-widest text-stone-700 font-bold block mb-2">Tarifa Fuera del Distrito</label>
-                    <input type="number" value={shippingOutsideRate} onChange={e => setShippingOutsideRate(Number(e.target.value))} className="w-full p-3 border" />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="text-[10px] uppercase tracking-widest text-stone-700 font-bold block mb-2">Palabras clave para Distrito</label>
-                    <input value={shippingKeywordsText} onChange={e => setShippingKeywordsText(e.target.value)} className="w-full p-3 border" placeholder="Distrito, Santo Domingo, Zona, Colonia" />
-                  </div>
-                </div>
-                <button onClick={handleSaveShippingSettings} className="py-3 px-4 bg-[#2A2621] hover:bg-[#C5A880] text-white uppercase tracking-widest text-[10px] font-bold">Guardar ajustes de envío</button>
               </div>
             )}
 
@@ -2294,8 +2404,8 @@ export default function AdminPanel({
                     <label className="text-[10px] uppercase font-bold tracking-wider text-stone-700 block">Número de WhatsApp (Sin signos, solo dígitos con lada)</label>
                     <input 
                       type="text" 
-                      value={socials.whatsAppPhone} 
-                      onChange={e => setSocials({ ...socials, whatsAppPhone: e.target.value })}
+                      value={socialsForm.whatsAppPhone ?? ''} 
+                      onChange={e => setSocialsForm({ ...socialsForm, whatsAppPhone: e.target.value })}
                       placeholder="18294855693"
                       className="w-full text-xs p-2.5 bg-white border"
                     />
@@ -2305,8 +2415,8 @@ export default function AdminPanel({
                     <label className="text-[10px] uppercase font-bold tracking-wider text-stone-700 block">Mensaje predeterminado de consulta</label>
                     <input 
                       type="text" 
-                      value={socials.whatsAppText} 
-                      onChange={e => setSocials({ ...socials, whatsAppText: e.target.value })}
+                      value={socialsForm.whatsAppText ?? ''} 
+                      onChange={e => setSocialsForm({ ...socialsForm, whatsAppText: e.target.value })}
                       placeholder="Hola, me gustaría agendar consulta molecular..."
                       className="w-full text-xs p-2.5 bg-white border"
                     />
@@ -2316,8 +2426,8 @@ export default function AdminPanel({
                     <label className="text-[10px] uppercase font-bold tracking-wider text-stone-700 block">Enlace de Perfil Instagram</label>
                     <input 
                       type="text" 
-                      value={socials.instagramUrl} 
-                      onChange={e => setSocials({ ...socials, instagramUrl: e.target.value })}
+                      value={socialsForm.instagramUrl ?? ''} 
+                      onChange={e => setSocialsForm({ ...socialsForm, instagramUrl: e.target.value })}
                       className="w-full text-xs p-2.5 bg-white border"
                     />
                   </div>
@@ -2326,21 +2436,16 @@ export default function AdminPanel({
                     <label className="text-[10px] uppercase font-bold tracking-wider text-stone-700 block">Enlace de Perfil Facebook</label>
                     <input 
                       type="text" 
-                      value={socials.facebookUrl} 
-                      onChange={e => setSocials({ ...socials, facebookUrl: e.target.value })}
+                      value={socialsForm.facebookUrl ?? ''} 
+                      onChange={e => setSocialsForm({ ...socialsForm, facebookUrl: e.target.value })}
                       className="w-full text-xs p-2.5 bg-white border"
                     />
                   </div>
 
                   <button 
                     onClick={async () => {
-                      try {
-                        await socialsApi.update(socials);
-                        showFeedback('Ajustes de Redes Sociales actualizados de forma sitewide');
-                      } catch (error) {
-                        console.error('Error updating social config:', error);
-                        showFeedback('Error al guardar configuración social en Supabase', true);
-                      }
+                      await socialsApi.update(socialsForm);
+                      setSocials(socialsForm);
                     }}
                     className="w-full py-3 bg-[#2A2621] hover:bg-stone-800 text-white font-bold text-[10px] tracking-widest uppercase transition-colors"
                   >

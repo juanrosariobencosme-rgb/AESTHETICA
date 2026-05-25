@@ -1,12 +1,20 @@
 import { supabase } from '../supabase';
 import { SocialConfig } from '../../types';
 
+function shouldRetryWithLegacyColumns(error: any): boolean {
+  return (
+    error?.code === 'PGRST204' ||
+    error?.code === '42703' ||
+    (typeof error?.message === 'string' && error.message.includes('schema cache'))
+  );
+}
+
 function fromDbSocials(row: any): SocialConfig {
   return {
-    whatsAppPhone: row.whatsappphone,
-    whatsAppText: row.whatsapptext,
-    instagramUrl: row.instagramurl,
-    facebookUrl: row.facebookurl
+    whatsAppPhone: row.whatsapp_phone ?? row.whatsapp ?? row.whatsappphone ?? '',
+    whatsAppText: row.whatsapp_text ?? row.whatsapptext ?? '',
+    instagramUrl: row.instagram_url ?? row.instagram ?? '',
+    facebookUrl: row.facebook_url ?? row.facebook ?? ''
   };
 }
 
@@ -35,21 +43,46 @@ export const socialsApi = {
 
   async update(config: SocialConfig): Promise<SocialConfig> {
     try {
-      const dbConfig = {
+      // Si el form viene con undefined por datos incompletos, normalizamos a string.
+      const normalized: SocialConfig = {
+        whatsAppPhone: config.whatsAppPhone ?? '',
+        whatsAppText: config.whatsAppText ?? '',
+        instagramUrl: config.instagramUrl ?? '',
+        facebookUrl: config.facebookUrl ?? ''
+      };
+
+      let dbConfig: any = {
         id: 'default',
-        whatsappphone: config.whatsAppPhone,
-        whatsapptext: config.whatsAppText,
-        instagramurl: config.instagramUrl,
-        facebookurl: config.facebookUrl
+        whatsapp_phone: normalized.whatsAppPhone,
+        whatsapp_text: normalized.whatsAppText,
+        instagram_url: normalized.instagramUrl,
+        facebook_url: normalized.facebookUrl
       };
 
       console.log('Updating social config:', dbConfig);
 
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('social_config')
         .upsert(dbConfig, { onConflict: 'id' })
         .select()
         .single();
+
+      // Fallback si el esquema viejo no tiene whatsapp_phone (ej: "whatsapp")
+      if (error && shouldRetryWithLegacyColumns(error) && String(error.message || '').includes('whatsapp_phone')) {
+        dbConfig = {
+          id: 'default',
+          whatsapp: normalized.whatsAppPhone,
+          whatsapptext: normalized.whatsAppText,
+          instagram: normalized.instagramUrl,
+          facebook: normalized.facebookUrl
+        };
+        console.log('Retry updating social config with legacy columns:', dbConfig);
+        ({ data, error } = await supabase
+          .from('social_config')
+          .upsert(dbConfig, { onConflict: 'id' })
+          .select()
+          .single());
+      }
 
       if (error) {
         console.error('Error updating social config:', error);

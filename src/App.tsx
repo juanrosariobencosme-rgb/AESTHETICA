@@ -37,7 +37,7 @@ const DEFAULT_EXPENSES: Expense[] = [];
 const DEFAULT_SHIPPING: ShippingSettings = {
   id: 'default',
   districtRate: 200,
-  outsideRate: 350,
+  outsideRate: 300,
   districtKeywords: ['Distrito', 'Santo Domingo', 'Zona', 'Colonia']
 };
 const DEFAULT_BANK_ACCOUNT: BankAccount = {
@@ -113,6 +113,7 @@ export default function App() {
         setProductsArr(products);
         setPromotionsArr(promotions);
         setCombosArr(combos);
+        console.log('App: combos loaded, count =', (combos || []).length);
         setCarouselArr(carousel);
         setSkinTypesArr(skinTypes);
         setOrdersArr(orders);
@@ -538,6 +539,7 @@ export default function App() {
                 }}
                 selectedCountryCode={selectedCountryCode}
                 whatsAppPhone={socialsState.whatsAppPhone}
+                bankAccount={bankAccount}
                 enableAnimations={false}
               />
             )}

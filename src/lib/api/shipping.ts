@@ -4,9 +4,9 @@ import { ShippingSettings } from '../../types';
 function fromDbSettings(row: any): ShippingSettings {
   return {
     id: row.id,
-    districtRate: Number(row.districtrate),
-    outsideRate: Number(row.outsiderate),
-    districtKeywords: row.districtkeywords || []
+    districtRate: Number(row.district_rate),
+    outsideRate: Number(row.outside_rate),
+    districtKeywords: row.district_keywords || []
   };
 }
 
@@ -31,9 +31,9 @@ export const shippingApi = {
   async upsert(settings: ShippingSettings): Promise<ShippingSettings> {
     const dbSettings = {
       id: 'default',
-      districtrate: settings.districtRate,
-      outsiderate: settings.outsideRate,
-      districtkeywords: settings.districtKeywords
+      district_rate: settings.districtRate,
+      outside_rate: settings.outsideRate,
+      district_keywords: settings.districtKeywords
     };
 
     const { data, error } = await supabase
